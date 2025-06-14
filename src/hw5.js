@@ -81,7 +81,7 @@ function createBasketballCourt() {
   for (let i = 0; i <= threePointSegments; i++) {
     const theta = (i / threePointSegments) * Math.PI - Math.PI / 2; // Theta from -PI/2 to PI/2
     leftThreePointPoints.push(new THREE.Vector3(
-      leftArcCenterX - Math.cos(theta) * threePointRadius, // Changed sign to make it curve inwards (concave)
+      leftArcCenterX + Math.cos(theta) * threePointRadius, // Changed sign to make it curve inwards (concave)
       0.11,
       Math.sin(theta) * threePointRadius
     ));
@@ -99,7 +99,7 @@ function createBasketballCourt() {
   for (let i = 0; i <= threePointSegments; i++) {
     const theta = (i / threePointSegments) * Math.PI - Math.PI / 2; // Theta from -PI/2 to PI/2
     rightThreePointPoints.push(new THREE.Vector3(
-      rightArcCenterX + Math.cos(theta) * threePointRadius, // Changed sign to make it curve inwards (concave)
+      rightArcCenterX - Math.cos(theta) * threePointRadius, // Changed to subtraction for inward curve
       0.11,
       Math.sin(theta) * threePointRadius
     ));
@@ -181,51 +181,66 @@ function createBasketballHoop(hoopX, rotationY) {
 }
 
 // Create static basketball
+// Create realistic basketball with proper seam pattern
+// Create realistic basketball with correct seam pattern
 function createBasketball() {
   const ballRadius = 0.12;
-  const ballGeometry = new THREE.SphereGeometry(ballRadius, 32, 32);
+  const ballGeometry = new THREE.SphereGeometry(ballRadius, 64, 64);
   
-  // Create a custom material with black seams
   const ballMaterial = new THREE.MeshPhongMaterial({
-    color: 0xff8c00, // Orange color
-    shininess: 30
+    color: 0xd35400,
+    shininess: 8,
+    specular: 0x444444
   });
   
   const ball = new THREE.Mesh(ballGeometry, ballMaterial);
-  ball.position.set(0, ballRadius + 0.1, 0); // Slightly above court surface
+  ball.position.set(0, ballRadius + 0.1, 0);
   ball.castShadow = true;
   scene.add(ball);
-
-  // Add black seams
-  const seamMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
   
-  // Create seams using curved lines
-  const seamCurve = new THREE.CubicBezierCurve3(
-    new THREE.Vector3(-ballRadius, 0, 0),
-    new THREE.Vector3(-ballRadius, ballRadius * 0.5, ballRadius * 0.5),
-    new THREE.Vector3(0, ballRadius, 0),
-    new THREE.Vector3(ballRadius, ballRadius * 0.5, ballRadius * 0.5)
-  );
-
-  const seamPoints = seamCurve.getPoints(20);
-  const seamGeometry = new THREE.BufferGeometry().setFromPoints(seamPoints);
-  const seam = new THREE.Line(seamGeometry, seamMaterial);
-  ball.add(seam);
-
-  // Add rotated copies of the seam
-  const seam2 = seam.clone();
-  seam2.rotation.y = Math.PI / 2;
+  // Seam material
+  const seamThickness = 0.003;
+  const seamMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+  
+  // Create the main curved seam that goes around the ball
+  function createMainCurvedSeam() {
+    const steps = 200;
+    const curvePoints = [];
+    
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const theta = t * Math.PI * 2; // Full circle
+      
+      // Create the characteristic S-curve by varying the latitude
+      const latitudeVariation = Math.PI / 4 * Math.sin(2 * theta); // Creates the S-shape
+      const phi = latitudeVariation;
+      
+      const x = ballRadius * Math.cos(phi) * Math.cos(theta);
+      const y = ballRadius * Math.sin(phi);
+      const z = ballRadius * Math.cos(phi) * Math.sin(theta);
+      
+      curvePoints.push(new THREE.Vector3(x, y, z));
+    }
+    
+    // Close the curve
+    curvePoints.push(curvePoints[0]);
+    
+    const curvePath = new THREE.CatmullRomCurve3(curvePoints, true);
+    const curveGeometry = new THREE.TubeGeometry(curvePath, steps, seamThickness, 8, true);
+    return new THREE.Mesh(curveGeometry, seamMat);
+  }
+  
+  // Create the first curved seam
+  const seam1 = createMainCurvedSeam();
+  ball.add(seam1);
+  
+  // Create the second curved seam (perpendicular to the first)
+  const seam2 = createMainCurvedSeam();
+  seam2.rotation.y = Math.PI / 2; // Rotate 90 degrees
   ball.add(seam2);
-
-  const seam3 = seam.clone();
-  seam3.rotation.z = Math.PI / 2;
-  ball.add(seam3);
-
-  const seam4 = seam3.clone();
-  seam4.rotation.y = Math.PI / 2;
-  ball.add(seam4);
+  
+  return ball;
 }
-
 // Create UI elements
 function createUI() {
   // Score display container
