@@ -162,27 +162,56 @@ function createBasketballHoop(hoopX, rotationY) {
   // --- Net ---
   const netMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
   const netBottomY = rim.position.y - NET_HEIGHT;
-  // Net lines
-  for (let i = 0; i < NET_SEGMENTS; i++) {
-    const angle = (i / NET_SEGMENTS) * Math.PI * 2;
-    const netGeometry = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(
-        rim.position.x + Math.cos(angle) * RIM_RADIUS,
-        rim.position.y,
-        rim.position.z + Math.sin(angle) * RIM_RADIUS
-      ),
-      new THREE.Vector3(
-        rim.position.x + Math.cos(angle) * NET_BOTTOM_RADIUS,
-        netBottomY,
-        rim.position.z + Math.sin(angle) * NET_BOTTOM_RADIUS
-      )
-    ]);
-    hoopGroup.add(new THREE.Line(netGeometry, netMaterial));
+  
+  // Create diagonal net segments
+  const netSegments = NET_SEGMENTS;
+  const netPoints = [];
+  
+  // Create points for the net
+  for (let i = 0; i <= netSegments; i++) {
+    const angle = (i / netSegments) * Math.PI * 2;
+    // Top rim points
+    netPoints.push(new THREE.Vector3(
+      rim.position.x + Math.cos(angle) * RIM_RADIUS,
+      rim.position.y,
+      rim.position.z + Math.sin(angle) * RIM_RADIUS
+    ));
+    // Bottom rim points
+    netPoints.push(new THREE.Vector3(
+      rim.position.x + Math.cos(angle) * NET_BOTTOM_RADIUS,
+      netBottomY,
+      rim.position.z + Math.sin(angle) * NET_BOTTOM_RADIUS
+    ));
   }
+
+  // Create diagonal segments
+  for (let i = 0; i < netSegments; i++) {
+    // Vertical segments
+    const verticalGeometry = new THREE.BufferGeometry().setFromPoints([
+      netPoints[i * 2],
+      netPoints[i * 2 + 1]
+    ]);
+    hoopGroup.add(new THREE.Line(verticalGeometry, netMaterial));
+
+    // Diagonal segments (forward)
+    const diagonalForwardGeometry = new THREE.BufferGeometry().setFromPoints([
+      netPoints[i * 2],
+      netPoints[((i + 1) * 2 + 1) % (netSegments * 2)]
+    ]);
+    hoopGroup.add(new THREE.Line(diagonalForwardGeometry, netMaterial));
+
+    // Diagonal segments (backward)
+    const diagonalBackwardGeometry = new THREE.BufferGeometry().setFromPoints([
+      netPoints[i * 2 + 1],
+      netPoints[((i + 1) * 2) % (netSegments * 2)]
+    ]);
+    hoopGroup.add(new THREE.Line(diagonalBackwardGeometry, netMaterial));
+  }
+
   // Net bottom circle
   const bottomCirclePoints = [];
-  for (let i = 0; i <= NET_SEGMENTS; i++) {
-    const angle = (i / NET_SEGMENTS) * Math.PI * 2;
+  for (let i = 0; i <= netSegments; i++) {
+    const angle = (i / netSegments) * Math.PI * 2;
     bottomCirclePoints.push(new THREE.Vector3(
       rim.position.x + Math.cos(angle) * NET_BOTTOM_RADIUS,
       netBottomY,
