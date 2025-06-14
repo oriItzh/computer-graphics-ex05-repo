@@ -1,17 +1,31 @@
-// --- DIMENSIONS & CONSTANTS (all units in meters) ---
+const VISIBLE_COURT_OFFSET = 2;
+const COURT_LENGTH = 28.65;
+const COURT_WIDTH = 15.24;
+const VISIBLE_COURT_LENGTH = COURT_LENGTH + VISIBLE_COURT_OFFSET;
+const VISIBLE_COURT_WIDTH = COURT_WIDTH + VISIBLE_COURT_OFFSET;
+const COURT_HEIGHT = 0.2;
+const RIM_RADIUS = 0.225;
+const BACKBOARD_THICKNESS = 0.05;
+const RIM_TO_BACKBOARD_X = BACKBOARD_THICKNESS + RIM_RADIUS;
 
-import * as THREE from 'three';
-// import { scene } from './scene.js';   
+export function createBasketballCourt(scene) {
+  addCourtFloor(scene);
+  addCourtLines(scene);
+  addThreePointLines(scene);
+  addKeys(scene);
+  addFreeThrowCircles(scene);
+  addRestrictedAreas(scene);
+}
 
-export function createBasketballCourt(scene, COURT_LENGTH = 28, COURT_WIDTH = 15, COURT_HEIGHT = 0.1, RIM_TO_BACKBOARD_X = 1.2, VISIBLE_COURT_OFFSET = 0.1) {
-  // Floor
+function addCourtFloor(scene) {
   const courtGeometry = new THREE.BoxGeometry(VISIBLE_COURT_LENGTH, COURT_HEIGHT, VISIBLE_COURT_WIDTH);
   const courtMaterial = new THREE.MeshPhongMaterial({ color: 0xc68642, shininess: 50 });
   const court = new THREE.Mesh(courtGeometry, courtMaterial);
   court.receiveShadow = true;
   scene.add(court);
+}
 
-  // --- Court Lines ---
+function addCourtLines(scene) {
   const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
 
   // Center line
@@ -21,6 +35,7 @@ export function createBasketballCourt(scene, COURT_LENGTH = 28, COURT_WIDTH = 15
   ]);
   scene.add(new THREE.Line(centerLineGeometry, lineMaterial));
 
+  // Court outline
   const courtOutlinePoints = [
     new THREE.Vector3(0, COURT_HEIGHT/2 + 0.01, COURT_WIDTH/2),
     new THREE.Vector3(0, COURT_HEIGHT/2 + 0.01, -COURT_WIDTH/2),
@@ -29,11 +44,12 @@ export function createBasketballCourt(scene, COURT_LENGTH = 28, COURT_WIDTH = 15
     new THREE.Vector3(-COURT_LENGTH/2, COURT_HEIGHT/2 + 0.01, COURT_WIDTH/2),
     new THREE.Vector3(-COURT_LENGTH/2, COURT_HEIGHT/2 + 0.01, -COURT_WIDTH/2),
     new THREE.Vector3(0, COURT_HEIGHT/2 + 0.01, -COURT_WIDTH/2),
-    ];
+  ];
   const courtOutline = new THREE.BufferGeometry().setFromPoints(courtOutlinePoints);
   scene.add(new THREE.Line(courtOutline, lineMaterial));
+
   // Center circle
-  const centerCircleRadius = 1.83; // NBA: 12ft diameter (6ft radius) = 3.66m diameter (1.83m radius)
+  const centerCircleRadius = 1.83;
   const centerCircleSegments = 32;
   const centerCirclePoints = [];
   for (let i = 0; i <= centerCircleSegments; i++) {
@@ -46,42 +62,27 @@ export function createBasketballCourt(scene, COURT_LENGTH = 28, COURT_WIDTH = 15
   }
   const centerCircleGeometry = new THREE.BufferGeometry().setFromPoints(centerCirclePoints);
   scene.add(new THREE.Line(centerCircleGeometry, lineMaterial));
+}
 
-  // Three-point lines (arcs and straight lines)
-  const threePointArcRadius = 7.24; // NBA: 23ft 9in = 7.24m
-  const threePointSideZ = COURT_WIDTH / 2 - 0.91; // NBA: 3ft from sideline = 0.91m from sideline
+function addThreePointLines(scene) {
+  const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+  const threePointArcRadius = 7.24;
+  const threePointSideZ = COURT_WIDTH / 2 - 0.91;
   const threePointSegments = 64;
   const courtHalfLength = COURT_LENGTH / 2;
   const X_OFFSET = 1;
-
-  // Calculate the X coordinate where the straight line meets the arc
-  // arcRadius^2 = deltaX^2 + deltaZ^2
-  // deltaX = sqrt(arcRadius^2 - deltaZ^2)
   const threePointXOffsetFromBasket = Math.sqrt(
     threePointArcRadius * threePointArcRadius - threePointSideZ * threePointSideZ
   );
 
-  // Left three-point line
+  // Left
   const leftHoopX = -courtHalfLength;
-  const leftBasketCenterX = leftHoopX + RIM_TO_BACKBOARD_X + X_OFFSET; // X-coordinate of the basket center
-
+  const leftBasketCenterX = leftHoopX + RIM_TO_BACKBOARD_X + X_OFFSET;
   const leftThreePointPoints = [];
-  // Straight line segment (bottom left)
-  leftThreePointPoints.push(new THREE.Vector3(
-    leftHoopX,
-    COURT_HEIGHT/2 + 0.01,
-    -threePointSideZ
-  ));
-  leftThreePointPoints.push(new THREE.Vector3(
-    leftBasketCenterX + threePointXOffsetFromBasket,
-    COURT_HEIGHT/2 + 0.01,
-    -threePointSideZ
-  ));
-
-  // Arc segment
+  leftThreePointPoints.push(new THREE.Vector3(leftHoopX, COURT_HEIGHT/2 + 0.01, -threePointSideZ));
+  leftThreePointPoints.push(new THREE.Vector3(leftBasketCenterX + threePointXOffsetFromBasket, COURT_HEIGHT/2 + 0.01, -threePointSideZ));
   const startAngleLeft = Math.atan2(-threePointSideZ, threePointXOffsetFromBasket);
   const endAngleLeft = Math.atan2(threePointSideZ, threePointXOffsetFromBasket);
-
   for (let i = 0; i <= threePointSegments; i++) {
     const theta = startAngleLeft + (i / threePointSegments) * (endAngleLeft - startAngleLeft);
     leftThreePointPoints.push(new THREE.Vector3(
@@ -90,43 +91,19 @@ export function createBasketballCourt(scene, COURT_LENGTH = 28, COURT_WIDTH = 15
       Math.sin(theta) * threePointArcRadius
     ));
   }
-
-  // Straight line segment (top left)
-  leftThreePointPoints.push(new THREE.Vector3(
-    leftBasketCenterX + threePointXOffsetFromBasket,
-    COURT_HEIGHT/2 + 0.01,
-    threePointSideZ
-  ));
-  leftThreePointPoints.push(new THREE.Vector3(
-    leftHoopX,
-    COURT_HEIGHT/2 + 0.01,
-    threePointSideZ
-  ));
-
+  leftThreePointPoints.push(new THREE.Vector3(leftBasketCenterX + threePointXOffsetFromBasket, COURT_HEIGHT/2 + 0.01, threePointSideZ));
+  leftThreePointPoints.push(new THREE.Vector3(leftHoopX, COURT_HEIGHT/2 + 0.01, threePointSideZ));
   const leftThreePointGeometry = new THREE.BufferGeometry().setFromPoints(leftThreePointPoints);
   scene.add(new THREE.Line(leftThreePointGeometry, lineMaterial));
 
-  // Right three-point line
+  // Right
   const rightHoopX = courtHalfLength;
-  const rightBasketCenterX = rightHoopX - RIM_TO_BACKBOARD_X - X_OFFSET; // X-coordinate of the basket center
-
+  const rightBasketCenterX = rightHoopX - RIM_TO_BACKBOARD_X - X_OFFSET;
   const rightThreePointPoints = [];
-  // Straight line segment (bottom right)
-  rightThreePointPoints.push(new THREE.Vector3(
-    rightHoopX,
-    COURT_HEIGHT/2 + 0.01,
-    -threePointSideZ
-  ));
-  rightThreePointPoints.push(new THREE.Vector3(
-    rightBasketCenterX - threePointXOffsetFromBasket,
-    COURT_HEIGHT/2 + 0.01,
-    -threePointSideZ
-  ));
-
-  // Arc segment
+  rightThreePointPoints.push(new THREE.Vector3(rightHoopX, COURT_HEIGHT/2 + 0.01, -threePointSideZ));
+  rightThreePointPoints.push(new THREE.Vector3(rightBasketCenterX - threePointXOffsetFromBasket, COURT_HEIGHT/2 + 0.01, -threePointSideZ));
   const startAngleRight = Math.atan2(-threePointSideZ, threePointXOffsetFromBasket);
   const endAngleRight = Math.atan2(threePointSideZ, threePointXOffsetFromBasket);
-
   for (let i = 0; i <= threePointSegments; i++) {
     const theta = startAngleRight + (i / threePointSegments) * (endAngleRight - startAngleRight);
     rightThreePointPoints.push(new THREE.Vector3(
@@ -135,25 +112,19 @@ export function createBasketballCourt(scene, COURT_LENGTH = 28, COURT_WIDTH = 15
       Math.sin(theta) * threePointArcRadius
     ));
   }
-
-  // Straight line segment (top right)
-  rightThreePointPoints.push(new THREE.Vector3(
-    rightBasketCenterX - threePointXOffsetFromBasket,
-    COURT_HEIGHT/2 + 0.01,
-    threePointSideZ
-  ));
-  rightThreePointPoints.push(new THREE.Vector3(
-    rightHoopX,
-    COURT_HEIGHT/2 + 0.01,
-    threePointSideZ
-  ));
-
+  rightThreePointPoints.push(new THREE.Vector3(rightBasketCenterX - threePointXOffsetFromBasket, COURT_HEIGHT/2 + 0.01, threePointSideZ));
+  rightThreePointPoints.push(new THREE.Vector3(rightHoopX, COURT_HEIGHT/2 + 0.01, threePointSideZ));
   const rightThreePointGeometry = new THREE.BufferGeometry().setFromPoints(rightThreePointPoints);
   scene.add(new THREE.Line(rightThreePointGeometry, lineMaterial));
+}
 
-  // Key (Free Throw Lane)
-  const keyWidth = 4.88; // NBA: 16 feet = 4.88m
-  const keyLength = 5.79; // NBA: 19 feet from baseline to foul line = 5.79m
+function addKeys(scene) {
+  const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+  const keyWidth = 4.88;
+  const keyLength = 5.79;
+  const courtHalfLength = COURT_LENGTH / 2;
+  const leftHoopX = -courtHalfLength;
+  const rightHoopX = courtHalfLength;
 
   // Left Key
   const leftKeyPoints = [
@@ -161,10 +132,9 @@ export function createBasketballCourt(scene, COURT_LENGTH = 28, COURT_WIDTH = 15
     new THREE.Vector3(leftHoopX, COURT_HEIGHT/2 + 0.01, keyWidth / 2),
     new THREE.Vector3(leftHoopX + keyLength, COURT_HEIGHT/2 + 0.01, keyWidth / 2),
     new THREE.Vector3(leftHoopX + keyLength, COURT_HEIGHT/2 + 0.01, -keyWidth / 2),
-    new THREE.Vector3(leftHoopX, COURT_HEIGHT/2 + 0.01, -keyWidth / 2) // Close the rectangle
+    new THREE.Vector3(leftHoopX, COURT_HEIGHT/2 + 0.01, -keyWidth / 2)
   ];
-  const leftKeyGeometry = new THREE.BufferGeometry().setFromPoints(leftKeyPoints);
-  scene.add(new THREE.Line(leftKeyGeometry, lineMaterial));
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(leftKeyPoints), lineMaterial));
 
   // Right Key
   const rightKeyPoints = [
@@ -172,19 +142,24 @@ export function createBasketballCourt(scene, COURT_LENGTH = 28, COURT_WIDTH = 15
     new THREE.Vector3(rightHoopX, COURT_HEIGHT/2 + 0.01, keyWidth / 2),
     new THREE.Vector3(rightHoopX - keyLength, COURT_HEIGHT/2 + 0.01, keyWidth / 2),
     new THREE.Vector3(rightHoopX - keyLength, COURT_HEIGHT/2 + 0.01, -keyWidth / 2),
-    new THREE.Vector3(rightHoopX, COURT_HEIGHT/2 + 0.01, -keyWidth / 2) // Close the rectangle
+    new THREE.Vector3(rightHoopX, COURT_HEIGHT/2 + 0.01, -keyWidth / 2)
   ];
-  const rightKeyGeometry = new THREE.BufferGeometry().setFromPoints(rightKeyPoints);
-  scene.add(new THREE.Line(rightKeyGeometry, lineMaterial));
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightKeyPoints), lineMaterial));
+}
 
-  // Free Throw Circles (Semicircles)
-  const freeThrowCircleRadius = 1.83; // NBA: 6ft radius = 1.83m
+function addFreeThrowCircles(scene) {
+  const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+  const keyLength = 5.79;
+  const freeThrowCircleRadius = 1.83;
   const freeThrowCircleSegments = 32;
+  const courtHalfLength = COURT_LENGTH / 2;
+  const leftHoopX = -courtHalfLength;
+  const rightHoopX = courtHalfLength;
 
-  // Left Free Throw Circle (semicircle)
+  // Left
   const leftFreeThrowLineX = leftHoopX + keyLength;
   const leftFreeThrowCirclePoints = [];
-  for (let i = 0; i <= freeThrowCircleSegments; i++) { // Half circle from 0 to PI
+  for (let i = 0; i <= freeThrowCircleSegments; i++) {
     const theta = -Math.PI / 2 + (i / freeThrowCircleSegments) * Math.PI;
     leftFreeThrowCirclePoints.push(new THREE.Vector3(
       leftFreeThrowLineX + Math.cos(theta) * freeThrowCircleRadius,
@@ -192,50 +167,54 @@ export function createBasketballCourt(scene, COURT_LENGTH = 28, COURT_WIDTH = 15
       Math.sin(theta) * freeThrowCircleRadius
     ));
   }
-  const leftFreeThrowCircleGeometry = new THREE.BufferGeometry().setFromPoints(leftFreeThrowCirclePoints);
-  scene.add(new THREE.Line(leftFreeThrowCircleGeometry, lineMaterial));
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(leftFreeThrowCirclePoints), lineMaterial));
 
-  // Right Free Throw Circle (semicircle)
+  // Right
   const rightFreeThrowLineX = rightHoopX - keyLength;
   const rightFreeThrowCirclePoints = [];
-  for (let i = 0; i <= freeThrowCircleSegments; i++) { // Half circle, but flipped
+  for (let i = 0; i <= freeThrowCircleSegments; i++) {
     const theta = Math.PI / 2 + (i / freeThrowCircleSegments) * Math.PI;
     rightFreeThrowCirclePoints.push(new THREE.Vector3(
-      rightFreeThrowLineX + Math.cos(theta) * freeThrowCircleRadius, // Subtract for x, as it's mirrored
+      rightFreeThrowLineX + Math.cos(theta) * freeThrowCircleRadius,
       COURT_HEIGHT/2 + 0.01,
       Math.sin(theta) * freeThrowCircleRadius
     ));
   }
-  const rightFreeThrowCircleGeometry = new THREE.BufferGeometry().setFromPoints(rightFreeThrowCirclePoints);
-  scene.add(new THREE.Line(rightFreeThrowCircleGeometry, lineMaterial));
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightFreeThrowCirclePoints), lineMaterial));
+}
 
-  // Restricted Area (No Charge Arc)
-  const restrictedAreaRadius = 1.22; // NBA: 4ft radius = 1.22m
-
-  // Left Restricted Area
-  const leftRestrictedAreaPoints = [];
+function addRestrictedAreas(scene) {
+  const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+  const restrictedAreaRadius = 1.22;
   const restrictedArcSegments = 32;
+  const courtHalfLength = COURT_LENGTH / 2;
+  const X_OFFSET = 1;
+  const leftHoopX = -courtHalfLength;
+  const rightHoopX = courtHalfLength;
+  const leftBasketCenterX = leftHoopX + RIM_TO_BACKBOARD_X + X_OFFSET;
+  const rightBasketCenterX = rightHoopX - RIM_TO_BACKBOARD_X - X_OFFSET;
+
+  // Left
+  const leftRestrictedAreaPoints = [];
   for (let i = 0; i <= restrictedArcSegments; i++) {
-    const theta = -Math.PI / 2 + (i / restrictedArcSegments) * Math.PI; // Semicircle from -PI/2 to PI/2
+    const theta = -Math.PI / 2 + (i / restrictedArcSegments) * Math.PI;
     leftRestrictedAreaPoints.push(new THREE.Vector3(
-      leftBasketCenterX - X_OFFSET + Math.cos(theta) * restrictedAreaRadius, // Corrected X-coordinate calculation
+      leftBasketCenterX - X_OFFSET + Math.cos(theta) * restrictedAreaRadius,
       COURT_HEIGHT/2 + 0.01,
       Math.sin(theta) * restrictedAreaRadius
     ));
   }
-  const leftRestrictedAreaGeometry = new THREE.BufferGeometry().setFromPoints(leftRestrictedAreaPoints);
-  scene.add(new THREE.Line(leftRestrictedAreaGeometry, lineMaterial));
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(leftRestrictedAreaPoints), lineMaterial));
 
-  // Right Restricted Area
+  // Right
   const rightRestrictedAreaPoints = [];
   for (let i = 0; i <= restrictedArcSegments; i++) {
-    const theta = Math.PI / 2 + (i / restrictedArcSegments) * Math.PI; // Semicircle from PI/2 to 3*PI/2
+    const theta = Math.PI / 2 + (i / restrictedArcSegments) * Math.PI;
     rightRestrictedAreaPoints.push(new THREE.Vector3(
-      rightBasketCenterX + X_OFFSET + Math.cos(theta) * restrictedAreaRadius, // Corrected X-coordinate calculation
+      rightBasketCenterX + X_OFFSET + Math.cos(theta) * restrictedAreaRadius,
       COURT_HEIGHT/2 + 0.01,
       Math.sin(theta) * restrictedAreaRadius
     ));
   }
-  const rightRestrictedAreaGeometry = new THREE.BufferGeometry().setFromPoints(rightRestrictedAreaPoints);
-  scene.add(new THREE.Line(rightRestrictedAreaGeometry, lineMaterial));
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightRestrictedAreaPoints), lineMaterial));
 }
