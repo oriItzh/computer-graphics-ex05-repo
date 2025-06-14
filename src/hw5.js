@@ -67,19 +67,21 @@ function createBasketballCourt() {
   scene.add(centerCircle);
 
   // Three-point lines
-  const threePointRadius = 7.62; // Adjusted radius to span court width (half court width)
+  const threePointRadius = 6.75; // As per instructions
   const threePointSegments = 64; // More segments for smoother arc
   const courtHalfLength = 28.65 / 2;
-  const arcCenterOffset = 7.24; // Standard 3-point distance from hoop
+  const rimLocalXOffset = 0.025 + 0.8; // Distance from hoopGroup origin to rim center in local X
 
   // Left three-point line
+  const leftHoopX = -courtHalfLength; // X-coordinate of the left backboard (hoopGroup origin)
+  const leftArcCenterX = leftHoopX + rimLocalXOffset; // Arc center is at the rim's X-position in world coordinates
+
   const leftThreePointGeometry = new THREE.BufferGeometry();
   const leftThreePointPoints = [];
-  const leftArcCenterX = -courtHalfLength + arcCenterOffset; // Center of arc for left side
   for (let i = 0; i <= threePointSegments; i++) {
-    const theta = Math.PI / 2 + (i / threePointSegments) * Math.PI; // Arc from +Z to -Z (semi-circle)
+    const theta = (i / threePointSegments) * Math.PI - Math.PI / 2; // Theta from -PI/2 to PI/2
     leftThreePointPoints.push(new THREE.Vector3(
-      leftArcCenterX + Math.cos(theta) * threePointRadius, // X position curves inwards
+      leftArcCenterX - Math.cos(theta) * threePointRadius, // Changed sign to make it curve inwards (concave)
       0.11,
       Math.sin(theta) * threePointRadius
     ));
@@ -89,13 +91,15 @@ function createBasketballCourt() {
   scene.add(leftThreePoint);
 
   // Right three-point line
+  const rightHoopX = courtHalfLength; // X-coordinate of the right backboard (hoopGroup origin)
+  const rightArcCenterX = rightHoopX - rimLocalXOffset; // Arc center is at the rim's X-position in world coordinates (due to PI rotation)
+
   const rightThreePointGeometry = new THREE.BufferGeometry();
   const rightThreePointPoints = [];
-  const rightArcCenterX = courtHalfLength - arcCenterOffset; // Center of arc for right side
   for (let i = 0; i <= threePointSegments; i++) {
-    const theta = Math.PI / 2 + (i / threePointSegments) * Math.PI; // Arc from +Z to -Z (semi-circle)
+    const theta = (i / threePointSegments) * Math.PI - Math.PI / 2; // Theta from -PI/2 to PI/2
     rightThreePointPoints.push(new THREE.Vector3(
-      rightArcCenterX - Math.cos(theta) * threePointRadius, // X position curves inwards (reflected)
+      rightArcCenterX + Math.cos(theta) * threePointRadius, // Changed sign to make it curve inwards (concave)
       0.11,
       Math.sin(theta) * threePointRadius
     ));
