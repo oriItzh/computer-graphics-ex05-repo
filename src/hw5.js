@@ -100,6 +100,7 @@ function createBasketballCourt() {
   const threePointSideZ = COURT_WIDTH / 2 - 0.91; // NBA: 3ft from sideline = 0.91m from sideline
   const threePointSegments = 64;
   const courtHalfLength = COURT_LENGTH / 2;
+  const X_OFFSET = 1;
 
   // Calculate the X coordinate where the straight line meets the arc
   // arcRadius^2 = deltaX^2 + deltaZ^2
@@ -110,7 +111,7 @@ function createBasketballCourt() {
 
   // Left three-point line
   const leftHoopX = -courtHalfLength;
-  const leftBasketCenterX = leftHoopX + RIM_TO_BACKBOARD_X; // X-coordinate of the basket center
+  const leftBasketCenterX = leftHoopX + RIM_TO_BACKBOARD_X + X_OFFSET; // X-coordinate of the basket center
 
   const leftThreePointPoints = [];
   // Straight line segment (bottom left)
@@ -155,7 +156,7 @@ function createBasketballCourt() {
 
   // Right three-point line
   const rightHoopX = courtHalfLength;
-  const rightBasketCenterX = rightHoopX - RIM_TO_BACKBOARD_X; // X-coordinate of the basket center
+  const rightBasketCenterX = rightHoopX - RIM_TO_BACKBOARD_X - X_OFFSET; // X-coordinate of the basket center
 
   const rightThreePointPoints = [];
   // Straight line segment (bottom right)
@@ -265,7 +266,7 @@ function createBasketballCourt() {
   for (let i = 0; i <= restrictedArcSegments; i++) {
     const theta = -Math.PI / 2 + (i / restrictedArcSegments) * Math.PI; // Semicircle from -PI/2 to PI/2
     leftRestrictedAreaPoints.push(new THREE.Vector3(
-      leftBasketCenterX + Math.cos(theta) * restrictedAreaRadius, // Corrected X-coordinate calculation
+      leftBasketCenterX - X_OFFSET + Math.cos(theta) * restrictedAreaRadius, // Corrected X-coordinate calculation
       COURT_HEIGHT/2 + 0.01,
       Math.sin(theta) * restrictedAreaRadius
     ));
@@ -278,7 +279,7 @@ function createBasketballCourt() {
   for (let i = 0; i <= restrictedArcSegments; i++) {
     const theta = Math.PI / 2 + (i / restrictedArcSegments) * Math.PI; // Semicircle from PI/2 to 3*PI/2
     rightRestrictedAreaPoints.push(new THREE.Vector3(
-      rightBasketCenterX + Math.cos(theta) * restrictedAreaRadius, // Corrected X-coordinate calculation
+      rightBasketCenterX + X_OFFSET + Math.cos(theta) * restrictedAreaRadius, // Corrected X-coordinate calculation
       COURT_HEIGHT/2 + 0.01,
       Math.sin(theta) * restrictedAreaRadius
     ));
