@@ -65,6 +65,7 @@ const BALL_GROUND_OFFSET = 0.1;
 // ========== COURT ROOT ==========
 function createBasketballCourt() {
   // Floor
+  
   // drawOuterLines(scene, VISIBLE_COURT_LENGTH, VISIBLE_COURT_WIDTH, COURT_HEIGHT);
   // drawThreePointLines(scene, COURT_LENGTH, COURT_WIDTH, COURT_HEIGHT);
   // drawCenterCircle(scene, COURT_LENGTH, COURT_WIDTH, COURT_HEIGHT);
