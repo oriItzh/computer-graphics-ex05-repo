@@ -44,7 +44,7 @@ const RIM_TO_BACKBOARD_X = BACKBOARD_THICKNESS + RIM_RADIUS; // front edge of ba
 
 const NET_SEGMENTS = 8;
 const NET_HEIGHT = 0.4;
-const NET_BOTTOM_RADIUS = RIM_RADIUS * 0.7;
+const NET_BOTTOM_RADIUS = RIM_RADIUS * 0.5;
 
 const POLE_RADIUS = 0.1;
 const POLE_HEIGHT = 4;
@@ -65,7 +65,7 @@ const BALL_GROUND_OFFSET = 0.1;
 // ========== COURT ROOT ==========
 function createBasketballCourt() {
   // Floor
-  
+
   // drawOuterLines(scene, VISIBLE_COURT_LENGTH, VISIBLE_COURT_WIDTH, COURT_HEIGHT);
   // drawThreePointLines(scene, COURT_LENGTH, COURT_WIDTH, COURT_HEIGHT);
   // drawCenterCircle(scene, COURT_LENGTH, COURT_WIDTH, COURT_HEIGHT);
@@ -451,7 +451,7 @@ function createBasketballHoop(hoopX, rotationY) {
   ];
   const shooterSquare = new THREE.LineSegments(
     new THREE.BufferGeometry().setFromPoints(squarePoints),
-    new THREE.LineBasicMaterial({ color: 0xffffff })
+    new THREE.LineBasicMaterial({ color: 0xffffff , linewidth: 10 })
   );
   shooterSquare.position.set(
     backboard.position.x + (BACKBOARD_THICKNESS/2) + SHOOTER_SQUARE_FRONT,
