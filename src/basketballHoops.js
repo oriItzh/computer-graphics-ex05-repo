@@ -24,7 +24,13 @@ const SHOOTER_SQUARE_HEIGHT = BACKBOARD_HEIGHT / 2.5;
 const SHOOTER_SQUARE_ABOVE_RIM = 0.05; // vertical distance above rim
 const SHOOTER_SQUARE_FRONT = 0.01; // just in front of backboard
 
-export function createBasketballHoop(scene, hoopX, rotationY) {
+export function createBasketballHoops(scene, COURT_LENGTH) {
+  const courtHalfLength = COURT_LENGTH / 2;
+  createBasketballHoop(scene, -courtHalfLength, 0);         // Left hoop
+  createBasketballHoop(scene, courtHalfLength, Math.PI);    // Right hoop
+}
+
+function createBasketballHoop(scene, hoopX, rotationY) {
   const hoopGroup = new THREE.Group();
   hoopGroup.position.x = hoopX;
   hoopGroup.rotation.y = rotationY;

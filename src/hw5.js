@@ -1,6 +1,6 @@
 import { OrbitControls } from './OrbitControls.js'; // OrbitControls.js is a custom implementation of the OrbitControls class 
 import { createBasketballCourt } from './basketballCourt.js';
-import {  createBasketballHoop } from './basketballHoops.js';
+import {  createBasketballHoops } from './basketballHoops.js';
 import { createBasketball } from './basketball.js';
 import { createUI } from './ui.js';
 import { createStadiumStands } from './seats.js';
@@ -31,9 +31,9 @@ const COURT_LENGTH = 28.65; // NBA: 94 feet = 28.65 meters
 
 // Build scene
 createBasketballCourt(scene);
-const courtHalfLength = COURT_LENGTH / 2;
-createBasketballHoop(scene, -courtHalfLength, 0);         // Left hoop
-createBasketballHoop(scene, courtHalfLength, Math.PI);    // Right hoop
+createBasketballHoops(scene, COURT_LENGTH);         // Left hoop
+createStadiumStands(scene, COURT_LENGTH, 15); // 15 meters wide court
+createCourtLighting(scene, COURT_LENGTH, 15); // 15 meters wide court
 createBasketball(scene);
 createUI();
 
