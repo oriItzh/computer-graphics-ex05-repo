@@ -7,7 +7,7 @@ const LIGHT_INTENSITY = 0.8; // Intensity of the spotlights
 // Lamp dimensions
 const LAMP_WIDTH = 1.5;
 const LAMP_HEIGHT = 0.5;
-const LAMP_DEPTH = 0.4;
+const LAMP_DEPTH = 0.7;
 const LIGHT_PANEL_RADIUS = 0.15;
 const LIGHT_PANEL_SPACING = 0.4; // Space between light panels
 

@@ -5,6 +5,7 @@ import { createBasketball } from './basketball.js';
 import { createUI } from './ui.js';
 import { createStadiumStands } from './seats.js';
 import { createCourtLighting } from './courtLights.js';
+import { drawScoreboards } from './scoreboard.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -28,13 +29,15 @@ directionalLight.castShadow = true;
 
 // --- DIMENSIONS & CONSTANTS (all units in meters) ---
 const COURT_LENGTH = 28.65; // NBA: 94 feet = 28.65 meters
+const COURT_WIDTH = 15.4
 
 // Build scene
 createBasketballCourt(scene);
 createBasketballHoops(scene, COURT_LENGTH);         // Left hoop
-createStadiumStands(scene, COURT_LENGTH, 15); // 15 meters wide court
-createCourtLighting(scene, COURT_LENGTH, 15); // 15 meters wide court
+createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH); // 15 meters wide court
+createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH); // 15 meters wide court
 createBasketball(scene);
+drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
 createUI();
 
 const cameraTranslate = new THREE.Matrix4();
