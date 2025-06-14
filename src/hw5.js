@@ -81,7 +81,7 @@ function createBasketballCourt() {
   for (let i = 0; i <= threePointSegments; i++) {
     const theta = (i / threePointSegments) * Math.PI - Math.PI / 2; // Theta from -PI/2 to PI/2
     leftThreePointPoints.push(new THREE.Vector3(
-      leftArcCenterX - Math.cos(theta) * threePointRadius, // Changed to subtraction for inward curve
+      leftArcCenterX + Math.cos(theta) * threePointRadius, // Changed to subtraction for inward curve
       0.11,
       Math.sin(theta) * threePointRadius
     ));
@@ -99,7 +99,7 @@ function createBasketballCourt() {
   for (let i = 0; i <= threePointSegments; i++) {
     const theta = (i / threePointSegments) * Math.PI - Math.PI / 2; // Theta from -PI/2 to PI/2
     rightThreePointPoints.push(new THREE.Vector3(
-      rightArcCenterX - Math.cos(theta) * threePointRadius, // This was already correct for inward curve
+      rightArcCenterX - Math.cos(theta) * threePointRadius, // Changed to subtraction for inward curve
       0.11,
       Math.sin(theta) * threePointRadius
     ));
