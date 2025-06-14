@@ -133,20 +133,18 @@ function createBasketballHoop(hoopX, rotationY) {
   const rimGeometry = new THREE.TorusGeometry(rimRadius, 0.02, 16, rimSegments);
   const rimMaterial = new THREE.MeshPhongMaterial({ color: 0xff8c00 }); // Orange color
   const rim = new THREE.Mesh(rimGeometry, rimMaterial);
-  // Adjusted rim position to be attached flush with the backboard's front face
-  // Backboard front face is at local X 0.05. Rim's inner edge should be at 0.05.
-  // Rim's center should then be at 0.05 + rimRadius.
-  rim.position.set(0.05 + rimRadius, 3.05, 0); // Position relative to group origin
+  // Changed Y position from 3.05 to 2.65 to be just above bottom of backboard
+  rim.position.set(0.05 + rimRadius, 2.65, 0); // Position relative to group origin
   rim.rotation.x = Math.PI / 2; // Rotate to be horizontal
   rim.castShadow = true;
   hoopGroup.add(rim);
 
-  // Net
+  // Net (update netBottomY to match new rim position)
   const netSegments = 8;
   const netHeight = 0.4;
   const netMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
   const netBottomRadius = rimRadius * 0.8; // Tapered net
-  const netBottomY = 3.05 - netHeight;
+  const netBottomY = 2.65 - netHeight; // Updated to match new rim position
 
   // Add individual net lines from rim to bottom circle
   for (let i = 0; i < netSegments; i++) {
@@ -197,6 +195,30 @@ function createBasketballHoop(hoopX, rotationY) {
   arm.position.set(0.025 - 0.6, 3.05, 0); // Midpoint between backboard and pole in local X
   arm.castShadow = true;
   hoopGroup.add(arm);
+
+  // Shooter's square (guiding aid for shooting)
+  const squareHeight = 0.55;
+  const squareWidth = 0.7; // 1/4 of backboard height (1.8/4)
+  const squarePoints = [
+    // Define the four lines of the square
+    new THREE.Vector3(-squareWidth/2, squareHeight/2, 0),  // Top line start
+    new THREE.Vector3(squareWidth/2, squareHeight/2, 0),   // Top line end
+    new THREE.Vector3(squareWidth/2, squareHeight/2, 0),   // Right line start
+    new THREE.Vector3(squareWidth/2, -squareHeight/2, 0),  // Right line end
+    new THREE.Vector3(squareWidth/2, -squareHeight/2, 0),  // Bottom line start
+    new THREE.Vector3(-squareWidth/2, -squareHeight/2, 0), // Bottom line end
+    new THREE.Vector3(-squareWidth/2, -squareHeight/2, 0), // Left line start
+    new THREE.Vector3(-squareWidth/2, squareHeight/2, 0)   // Left line end
+  ];
+
+  const squareGeometry = new THREE.BufferGeometry().setFromPoints(squarePoints);
+  const squareMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+  const shooterSquare = new THREE.LineSegments(squareGeometry, squareMaterial);
+  
+  // Position it just above the rim, slightly in front of the backboard
+  shooterSquare.position.set(0.026, 2.9, 0);
+  shooterSquare.rotation.y = Math.PI / 2; // Rotate to face forward
+  hoopGroup.add(shooterSquare);
 
   scene.add(hoopGroup);
 }
