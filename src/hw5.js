@@ -27,7 +27,6 @@ directionalLight.castShadow = true;
 // --- DIMENSIONS & CONSTANTS (all units in meters) ---
 const COURT_LENGTH = 28.65; // NBA: 94 feet = 28.65 meters
 
-
 // Build scene
 createBasketballCourt(scene);
 const courtHalfLength = COURT_LENGTH / 2;
