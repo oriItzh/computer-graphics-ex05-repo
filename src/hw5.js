@@ -81,7 +81,7 @@ function createBasketballCourt() {
   for (let i = 0; i <= threePointSegments; i++) {
     const theta = (i / threePointSegments) * Math.PI - Math.PI / 2; // Theta from -PI/2 to PI/2
     leftThreePointPoints.push(new THREE.Vector3(
-      leftArcCenterX + Math.cos(theta) * threePointRadius, // Changed sign to make it curve inwards (concave)
+      leftArcCenterX - Math.cos(theta) * threePointRadius, // Changed to subtraction for inward curve
       0.11,
       Math.sin(theta) * threePointRadius
     ));
@@ -99,7 +99,7 @@ function createBasketballCourt() {
   for (let i = 0; i <= threePointSegments; i++) {
     const theta = (i / threePointSegments) * Math.PI - Math.PI / 2; // Theta from -PI/2 to PI/2
     rightThreePointPoints.push(new THREE.Vector3(
-      rightArcCenterX - Math.cos(theta) * threePointRadius, // Changed to subtraction for inward curve
+      rightArcCenterX - Math.cos(theta) * threePointRadius, // This was already correct for inward curve
       0.11,
       Math.sin(theta) * threePointRadius
     ));
@@ -123,7 +123,7 @@ function createBasketballHoop(hoopX, rotationY) {
     opacity: 0.8
   });
   const backboard = new THREE.Mesh(backboardGeometry, backboardMaterial);
-  backboard.position.set(0.025, 3.05, 0); // Position relative to group origin (slightly in front of hoopX to be inside court)
+  backboard.position.set(0.025, 3.05, 0); // Position relative to group origin
   backboard.castShadow = true;
   hoopGroup.add(backboard);
 
@@ -133,7 +133,10 @@ function createBasketballHoop(hoopX, rotationY) {
   const rimGeometry = new THREE.TorusGeometry(rimRadius, 0.02, 16, rimSegments);
   const rimMaterial = new THREE.MeshPhongMaterial({ color: 0xff8c00 }); // Orange color
   const rim = new THREE.Mesh(rimGeometry, rimMaterial);
-  rim.position.set(0.025 + 0.8, 3.05, 0); // Rim in front of backboard (along local X)
+  // Adjusted rim position to be attached flush with the backboard's front face
+  // Backboard front face is at local X 0.05. Rim's inner edge should be at 0.05.
+  // Rim's center should then be at 0.05 + rimRadius.
+  rim.position.set(0.05 + rimRadius, 3.05, 0); // Position relative to group origin
   rim.rotation.x = Math.PI / 2; // Rotate to be horizontal
   rim.castShadow = true;
   hoopGroup.add(rim);
@@ -142,24 +145,42 @@ function createBasketballHoop(hoopX, rotationY) {
   const netSegments = 8;
   const netHeight = 0.4;
   const netMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
-  
+  const netBottomRadius = rimRadius * 0.8; // Tapered net
+  const netBottomY = 3.05 - netHeight;
+
+  // Add individual net lines from rim to bottom circle
   for (let i = 0; i < netSegments; i++) {
     const angle = (i / netSegments) * Math.PI * 2;
     const netGeometry = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(
-        0.025 + 0.8 + Math.cos(angle) * rimRadius,
-        3.05,
-        0 + Math.sin(angle) * rimRadius
+        rim.position.x + Math.cos(angle) * rimRadius, // Top point X (relative to hoopGroup)
+        rim.position.y,                               // Top point Y
+        rim.position.z + Math.sin(angle) * rimRadius  // Top point Z
       ),
       new THREE.Vector3(
-        0.025 + 0.8 + Math.cos(angle) * (rimRadius * 0.8),
-        3.05 - netHeight,
-        0 + Math.sin(angle) * (rimRadius * 0.8)
+        rim.position.x + Math.cos(angle) * netBottomRadius, // Bottom point X
+        netBottomY,                                        // Bottom point Y
+        rim.position.z + Math.sin(angle) * netBottomRadius  // Bottom point Z
       )
     ]);
     const netLine = new THREE.Line(netGeometry, netMaterial);
     hoopGroup.add(netLine);
   }
+
+  // Add bottom circle to the net
+  const bottomCirclePoints = [];
+  for (let i = 0; i <= netSegments; i++) { // Loop <= segments to close the circle
+    const angle = (i / netSegments) * Math.PI * 2;
+    bottomCirclePoints.push(new THREE.Vector3(
+      rim.position.x + Math.cos(angle) * netBottomRadius,
+      netBottomY,
+      rim.position.z + Math.sin(angle) * netBottomRadius
+    ));
+  }
+  const bottomCircleGeometry = new THREE.BufferGeometry().setFromPoints(bottomCirclePoints);
+  const bottomCircle = new THREE.LineLoop(bottomCircleGeometry, netMaterial); // Use LineLoop for a closed circle
+  hoopGroup.add(bottomCircle);
+
 
   // Support structure (pole)
   const poleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 4, 8);
