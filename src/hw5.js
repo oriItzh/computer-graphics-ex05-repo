@@ -28,8 +28,8 @@ function degrees_to_radians(degrees) {
 
 // Create basketball court
 function createBasketballCourt() {
-  // Court floor - just a simple brown surface
-  const courtGeometry = new THREE.BoxGeometry(30, 0.2, 15);
+  // Court floor - proper dimensions (28.65m x 15.24m)
+  const courtGeometry = new THREE.BoxGeometry(28.65, 0.2, 15.24);
   const courtMaterial = new THREE.MeshPhongMaterial({ 
     color: 0xc68642,  // Brown wood color
     shininess: 50
@@ -37,13 +37,240 @@ function createBasketballCourt() {
   const court = new THREE.Mesh(courtGeometry, courtMaterial);
   court.receiveShadow = true;
   scene.add(court);
+
+  // Court lines material
+  const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+
+  // Center line
+  const centerLineGeometry = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0.11, -15.24 / 2), // Start at one sideline
+    new THREE.Vector3(0, 0.11, 15.24 / 2)  // End at the other sideline
+  ]);
+  const centerLine = new THREE.Line(centerLineGeometry, lineMaterial);
+  scene.add(centerLine);
+
+  // Center circle
+  const centerCircleRadius = 1.8;
+  const centerCircleSegments = 32;
+  const centerCircleGeometry = new THREE.BufferGeometry();
+  const centerCirclePoints = [];
+  for (let i = 0; i <= centerCircleSegments; i++) {
+    const theta = (i / centerCircleSegments) * Math.PI * 2;
+    centerCirclePoints.push(new THREE.Vector3(
+      Math.cos(theta) * centerCircleRadius,
+      0.11,
+      Math.sin(theta) * centerCircleRadius
+    ));
+  }
+  centerCircleGeometry.setFromPoints(centerCirclePoints);
+  const centerCircle = new THREE.Line(centerCircleGeometry, lineMaterial);
+  scene.add(centerCircle);
+
+  // Three-point lines
+  const threePointRadius = 7.62; // Adjusted radius to span court width (half court width)
+  const threePointSegments = 64; // More segments for smoother arc
+  const courtHalfLength = 28.65 / 2;
+  const arcCenterOffset = 7.24; // Standard 3-point distance from hoop
+
+  // Left three-point line
+  const leftThreePointGeometry = new THREE.BufferGeometry();
+  const leftThreePointPoints = [];
+  const leftArcCenterX = -courtHalfLength + arcCenterOffset; // Center of arc for left side
+  for (let i = 0; i <= threePointSegments; i++) {
+    const theta = Math.PI / 2 + (i / threePointSegments) * Math.PI; // Arc from +Z to -Z (semi-circle)
+    leftThreePointPoints.push(new THREE.Vector3(
+      leftArcCenterX + Math.cos(theta) * threePointRadius, // X position curves inwards
+      0.11,
+      Math.sin(theta) * threePointRadius
+    ));
+  }
+  leftThreePointGeometry.setFromPoints(leftThreePointPoints);
+  const leftThreePoint = new THREE.Line(leftThreePointGeometry, lineMaterial);
+  scene.add(leftThreePoint);
+
+  // Right three-point line
+  const rightThreePointGeometry = new THREE.BufferGeometry();
+  const rightThreePointPoints = [];
+  const rightArcCenterX = courtHalfLength - arcCenterOffset; // Center of arc for right side
+  for (let i = 0; i <= threePointSegments; i++) {
+    const theta = Math.PI / 2 + (i / threePointSegments) * Math.PI; // Arc from +Z to -Z (semi-circle)
+    rightThreePointPoints.push(new THREE.Vector3(
+      rightArcCenterX - Math.cos(theta) * threePointRadius, // X position curves inwards (reflected)
+      0.11,
+      Math.sin(theta) * threePointRadius
+    ));
+  }
+  rightThreePointGeometry.setFromPoints(rightThreePointPoints);
+  const rightThreePoint = new THREE.Line(rightThreePointGeometry, lineMaterial);
+  scene.add(rightThreePoint);
+}
+
+// Create basketball hoop
+function createBasketballHoop(hoopX, rotationY) {
+  const hoopGroup = new THREE.Group();
+  hoopGroup.position.x = hoopX;
+  hoopGroup.rotation.y = rotationY; // Rotate the entire group for direction
+
+  // Backboard (thin along X, wide along Z)
+  const backboardGeometry = new THREE.BoxGeometry(0.05, 1.05, 1.8); 
+  const backboardMaterial = new THREE.MeshPhongMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.8
+  });
+  const backboard = new THREE.Mesh(backboardGeometry, backboardMaterial);
+  backboard.position.set(0.025, 3.05, 0); // Position relative to group origin (slightly in front of hoopX to be inside court)
+  backboard.castShadow = true;
+  hoopGroup.add(backboard);
+
+  // Rim
+  const rimRadius = 0.225;
+  const rimSegments = 32;
+  const rimGeometry = new THREE.TorusGeometry(rimRadius, 0.02, 16, rimSegments);
+  const rimMaterial = new THREE.MeshPhongMaterial({ color: 0xff8c00 }); // Orange color
+  const rim = new THREE.Mesh(rimGeometry, rimMaterial);
+  rim.position.set(0.025 + 0.8, 3.05, 0); // Rim in front of backboard (along local X)
+  rim.rotation.x = Math.PI / 2; // Rotate to be horizontal
+  rim.castShadow = true;
+  hoopGroup.add(rim);
+
+  // Net
+  const netSegments = 8;
+  const netHeight = 0.4;
+  const netMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
   
-  // Note: All court lines, hoops, and other elements have been removed
-  // Students will need to implement these features
+  for (let i = 0; i < netSegments; i++) {
+    const angle = (i / netSegments) * Math.PI * 2;
+    const netGeometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(
+        0.025 + 0.8 + Math.cos(angle) * rimRadius,
+        3.05,
+        0 + Math.sin(angle) * rimRadius
+      ),
+      new THREE.Vector3(
+        0.025 + 0.8 + Math.cos(angle) * (rimRadius * 0.8),
+        3.05 - netHeight,
+        0 + Math.sin(angle) * (rimRadius * 0.8)
+      )
+    ]);
+    const netLine = new THREE.Line(netGeometry, netMaterial);
+    hoopGroup.add(netLine);
+  }
+
+  // Support structure (pole)
+  const poleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 4, 8);
+  const poleMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 }); // Gray color
+  const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+  pole.position.set(0.025 - 1.2, 2, 0); // Pole behind backboard (along local X)
+  pole.castShadow = true;
+  hoopGroup.add(pole);
+
+  // Support arm (connecting pole to backboard)
+  const armGeometry = new THREE.BoxGeometry(1.2, 0.1, 0.1); // Length, height, depth
+  const armMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
+  const arm = new THREE.Mesh(armGeometry, armMaterial);
+  arm.position.set(0.025 - 0.6, 3.05, 0); // Midpoint between backboard and pole in local X
+  arm.castShadow = true;
+  hoopGroup.add(arm);
+
+  scene.add(hoopGroup);
+}
+
+// Create static basketball
+function createBasketball() {
+  const ballRadius = 0.12;
+  const ballGeometry = new THREE.SphereGeometry(ballRadius, 32, 32);
+  
+  // Create a custom material with black seams
+  const ballMaterial = new THREE.MeshPhongMaterial({
+    color: 0xff8c00, // Orange color
+    shininess: 30
+  });
+  
+  const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+  ball.position.set(0, ballRadius + 0.1, 0); // Slightly above court surface
+  ball.castShadow = true;
+  scene.add(ball);
+
+  // Add black seams
+  const seamMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+  
+  // Create seams using curved lines
+  const seamCurve = new THREE.CubicBezierCurve3(
+    new THREE.Vector3(-ballRadius, 0, 0),
+    new THREE.Vector3(-ballRadius, ballRadius * 0.5, ballRadius * 0.5),
+    new THREE.Vector3(0, ballRadius, 0),
+    new THREE.Vector3(ballRadius, ballRadius * 0.5, ballRadius * 0.5)
+  );
+
+  const seamPoints = seamCurve.getPoints(20);
+  const seamGeometry = new THREE.BufferGeometry().setFromPoints(seamPoints);
+  const seam = new THREE.Line(seamGeometry, seamMaterial);
+  ball.add(seam);
+
+  // Add rotated copies of the seam
+  const seam2 = seam.clone();
+  seam2.rotation.y = Math.PI / 2;
+  ball.add(seam2);
+
+  const seam3 = seam.clone();
+  seam3.rotation.z = Math.PI / 2;
+  ball.add(seam3);
+
+  const seam4 = seam3.clone();
+  seam4.rotation.y = Math.PI / 2;
+  ball.add(seam4);
+}
+
+// Create UI elements
+function createUI() {
+  // Score display container
+  const scoreContainer = document.createElement('div');
+  scoreContainer.style.position = 'absolute';
+  scoreContainer.style.top = '20px';
+  scoreContainer.style.left = '50%';
+  scoreContainer.style.transform = 'translateX(-50%)';
+  scoreContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+  scoreContainer.style.color = 'white';
+  scoreContainer.style.padding = '10px 20px';
+  scoreContainer.style.borderRadius = '5px';
+  scoreContainer.style.fontFamily = 'Arial, sans-serif';
+  scoreContainer.style.fontSize = '24px';
+  scoreContainer.style.fontWeight = 'bold';
+  scoreContainer.innerHTML = `
+    <div id="score">Score: 0</div>
+  `;
+  document.body.appendChild(scoreContainer);
+
+  // Controls display container
+  const controlsContainer = document.createElement('div');
+  controlsContainer.style.position = 'absolute';
+  controlsContainer.style.bottom = '20px';
+  controlsContainer.style.left = '20px';
+  controlsContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+  controlsContainer.style.color = 'white';
+  controlsContainer.style.padding = '15px';
+  controlsContainer.style.borderRadius = '5px';
+  controlsContainer.style.fontFamily = 'Arial, sans-serif';
+  controlsContainer.style.fontSize = '16px';
+  controlsContainer.innerHTML = `
+    <h3 style="margin: 0 0 10px 0">Controls:</h3>
+    <p style="margin: 5px 0">O - Toggle orbit camera</p>
+    <p style="margin: 5px 0">Arrow Keys - Move basketball (coming in HW06)</p>
+    <p style="margin: 5px 0">W/S - Adjust power (coming in HW06)</p>
+    <p style="margin: 5px 0">Spacebar - Shoot (coming in HW06)</p>
+    <p style="margin: 5px 0">R - Reset ball position (coming in HW06)</p>
+  `;
+  document.body.appendChild(controlsContainer);
 }
 
 // Create all elements
 createBasketballCourt();
+const courtHalfLength = 28.65 / 2; // Recalculate for clarity
+createBasketballHoop(-courtHalfLength, 0); // Left hoop: positioned at left baseline, faces positive X (towards center)
+createBasketballHoop(courtHalfLength, Math.PI);  // Right hoop: positioned at right baseline, faces negative X (towards center)
+createBasketball();
+createUI();
 
 // Set camera position for better view
 const cameraTranslate = new THREE.Matrix4();
@@ -53,21 +280,6 @@ camera.applyMatrix4(cameraTranslate);
 // Orbit controls
 const controls = new OrbitControls(camera, renderer.domElement);
 let isOrbitEnabled = true;
-
-// Instructions display
-const instructionsElement = document.createElement('div');
-instructionsElement.style.position = 'absolute';
-instructionsElement.style.bottom = '20px';
-instructionsElement.style.left = '20px';
-instructionsElement.style.color = 'white';
-instructionsElement.style.fontSize = '16px';
-instructionsElement.style.fontFamily = 'Arial, sans-serif';
-instructionsElement.style.textAlign = 'left';
-instructionsElement.innerHTML = `
-  <h3>Controls:</h3>
-  <p>O - Toggle orbit camera</p>
-`;
-document.body.appendChild(instructionsElement);
 
 // Handle key events
 function handleKeyDown(e) {
