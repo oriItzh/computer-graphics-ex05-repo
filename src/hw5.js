@@ -525,6 +525,7 @@ function createUI() {
   document.body.appendChild(controlsContainer);
 }
 
+
 // Build scene
 createBasketballCourt();
 const courtHalfLength = COURT_LENGTH / 2;
