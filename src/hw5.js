@@ -1,4 +1,5 @@
 import { OrbitControls } from './OrbitControls.js'; // OrbitControls.js is a custom implementation of the OrbitControls class 
+// import { createBasketballCourt } from './basketballCourt.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -22,8 +23,8 @@ directionalLight.castShadow = true;
 
 // --- DIMENSIONS & CONSTANTS (all units in meters) ---
 const VISIBLE_COURT_OFFSET = 2;
-const COURT_LENGTH = 28.65;
-const COURT_WIDTH = 15.24;
+const COURT_LENGTH = 28.65; // NBA: 94 feet = 28.65 meters
+const COURT_WIDTH = 15.24; // NBA: 50 feet = 15.24 meters
 const VISIBLE_COURT_LENGTH = COURT_LENGTH + VISIBLE_COURT_OFFSET;
 const VISIBLE_COURT_WIDTH = COURT_WIDTH + VISIBLE_COURT_OFFSET;
 const COURT_HEIGHT = 0.2; // for debugging
@@ -64,6 +65,13 @@ const BALL_GROUND_OFFSET = 0.1;
 // ========== COURT ROOT ==========
 function createBasketballCourt() {
   // Floor
+  // drawOuterLines(scene, VISIBLE_COURT_LENGTH, VISIBLE_COURT_WIDTH, COURT_HEIGHT);
+  // drawThreePointLines(scene, COURT_LENGTH, COURT_WIDTH, COURT_HEIGHT);
+  // drawCenterCircle(scene, COURT_LENGTH, COURT_WIDTH, COURT_HEIGHT);
+  // drawKey(scene, COURT_LENGTH, COURT_WIDTH, COURT_HEIGHT);
+  // drawFreeThrowLines(scene, COURT_LENGTH, COURT_WIDTH, COURT_HEIGHT);
+  // drawRestrictedArea(scene, COURT_LENGTH, COURT_WIDTH, COURT_HEIGHT);
+
   const courtGeometry = new THREE.BoxGeometry(VISIBLE_COURT_LENGTH, COURT_HEIGHT, VISIBLE_COURT_WIDTH);
   const courtMaterial = new THREE.MeshPhongMaterial({ color: 0xc68642, shininess: 50 });
   const court = new THREE.Mesh(courtGeometry, courtMaterial);
@@ -89,7 +97,6 @@ function createBasketballCourt() {
     new THREE.Vector3(-COURT_LENGTH/2, COURT_HEIGHT/2 + 0.01, -COURT_WIDTH/2),
     new THREE.Vector3(0, COURT_HEIGHT/2 + 0.01, -COURT_WIDTH/2),
     ];
-
   const courtOutline = new THREE.BufferGeometry().setFromPoints(courtOutlinePoints);
   scene.add(new THREE.Line(courtOutline, lineMaterial));
   // Center circle
@@ -302,6 +309,13 @@ function createBasketballCourt() {
 
 // ========== HOOP & COMPONENTS (all relative) ==========
 function createBasketballHoop(hoopX, rotationY) {
+  // createRim(scene, hoopX, rotationY);
+  // createBackboard(scene, hoopX, rotationY);
+  // createNet(scene, hoopX, rotationY);
+  // createPole(scene, hoopX, rotationY);
+  // createArm(scene, hoopX, rotationY);
+  // createShootersSquare(scene, hoopX, rotationY);
+
   const hoopGroup = new THREE.Group();
   hoopGroup.position.x = hoopX;
   hoopGroup.rotation.y = rotationY;
@@ -527,7 +541,7 @@ function createUI() {
 
 
 // Build scene
-createBasketballCourt();
+createBasketballCourt(scene, COURT_LENGTH, COURT_WIDTH, COURT_HEIGHT, RIM_TO_BACKBOARD_X, VISIBLE_COURT_OFFSET);
 const courtHalfLength = COURT_LENGTH / 2;
 createBasketballHoop(-courtHalfLength, 0);         // Left hoop
 createBasketballHoop(courtHalfLength, Math.PI);    // Right hoop
