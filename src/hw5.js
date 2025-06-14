@@ -21,11 +21,11 @@ renderer.shadowMap.enabled = true;
 directionalLight.castShadow = true;
 
 // --- DIMENSIONS & CONSTANTS (all units in meters) ---
-const VISIBLE_COURT_OFFSET = 0.5;
-const VISIBLE_COURT_LENGTH = 28.65 + VISIBLE_COURT_OFFSET;
-const VISIBLE_COURT_WIDTH = 15.24 + VISIBLE_COURT_OFFSET;
-const COURT_LENGTH = VISIBLE_COURT_LENGTH - VISIBLE_COURT_OFFSET;
-const COURT_WIDTH = VISIBLE_COURT_WIDTH - VISIBLE_COURT_OFFSET;
+const VISIBLE_COURT_OFFSET = 2;
+const COURT_LENGTH = 28.65;
+const COURT_WIDTH = 15.24;
+const VISIBLE_COURT_LENGTH = COURT_LENGTH + VISIBLE_COURT_OFFSET;
+const VISIBLE_COURT_WIDTH = COURT_WIDTH + VISIBLE_COURT_OFFSET;
 const COURT_HEIGHT = 0.2; // for debugging
 
 const RIM_RADIUS = 0.225;
@@ -80,6 +80,18 @@ function createBasketballCourt() {
   ]);
   scene.add(new THREE.Line(centerLineGeometry, lineMaterial));
 
+  const courtOutlinePoints = [
+    new THREE.Vector3(0, COURT_HEIGHT/2 + 0.01, COURT_WIDTH/2),
+    new THREE.Vector3(0, COURT_HEIGHT/2 + 0.01, -COURT_WIDTH/2),
+    new THREE.Vector3(COURT_LENGTH/2, COURT_HEIGHT/2 + 0.01, -COURT_WIDTH/2),
+    new THREE.Vector3(COURT_LENGTH/2, COURT_HEIGHT/2 + 0.01, COURT_WIDTH/2),
+    new THREE.Vector3(-COURT_LENGTH/2, COURT_HEIGHT/2 + 0.01, COURT_WIDTH/2),
+    new THREE.Vector3(-COURT_LENGTH/2, COURT_HEIGHT/2 + 0.01, -COURT_WIDTH/2),
+    new THREE.Vector3(0, COURT_HEIGHT/2 + 0.01, -COURT_WIDTH/2),
+    ];
+
+  const courtOutline = new THREE.BufferGeometry().setFromPoints(courtOutlinePoints);
+  scene.add(new THREE.Line(courtOutline, lineMaterial));
   // Center circle
   const centerCircleRadius = 1.83; // NBA: 12ft diameter (6ft radius) = 3.66m diameter (1.83m radius)
   const centerCircleSegments = 32;
