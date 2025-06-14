@@ -76,6 +76,18 @@ const SHOOTER_SQUARE_FRONT = 0.01; // just in front of backboard
 const BALL_RADIUS = 0.12;
 const BALL_GROUND_OFFSET = 0.1;
 
+// Stadium dimensions
+const STADIUM_START_HEIGHT = 1; // Height where stands begin
+const STADIUM_END_HEIGHT = 10; // Maximum height of stands
+const STADIUM_DISTANCE = 5; // Distance from court edge
+const SEAT_WIDTH = 0.5;
+const SEAT_DEPTH = 0.5;
+const SEAT_HEIGHT = 0.4;
+const SEAT_BACK_HEIGHT = 0.6;
+const SEAT_BACK_THICKNESS = 0.05;
+const SEAT_SPACING = 0.1;
+const ROW_SPACING = 0.2;
+
 // ========== COURT ROOT ==========
 function createBasketballCourt() {
   // Floor
@@ -627,6 +639,82 @@ function createCourtLighting() {
   scene.add(lightPoleGroup);
 }
 
+// ========== STADIUM STANDS ==========
+function createStadiumStands() {
+  const seatMaterial = new THREE.MeshPhongMaterial({ color: 0x1e90ff }); // Dodger blue color
+  const standGroup = new THREE.Group();
+
+  // Calculate number of rows based on height difference
+  const totalHeight = STADIUM_END_HEIGHT - STADIUM_START_HEIGHT;
+  const numRows = Math.floor(totalHeight / (SEAT_HEIGHT + ROW_SPACING));
+  
+  // Create stands for all four sides
+  for (let side = 0; side < 4; side++) {
+    const isLongSide = side % 2 === 0;
+    const length = isLongSide ? COURT_LENGTH : COURT_WIDTH;
+    const width = isLongSide ? COURT_WIDTH : COURT_LENGTH;
+    
+    for (let row = 0; row < numRows; row++) {
+      const rowHeight = STADIUM_START_HEIGHT + row * (SEAT_HEIGHT + ROW_SPACING);
+      const rowDistance = STADIUM_DISTANCE + row * (SEAT_DEPTH + ROW_SPACING);
+      
+      // Calculate number of seats in this row
+      const numSeats = Math.floor(length / (SEAT_WIDTH + SEAT_SPACING));
+      
+      for (let seat = 0; seat < numSeats; seat++) {
+        const seatX = (seat - numSeats/2) * (SEAT_WIDTH + SEAT_SPACING);
+        
+        // Create seat group
+        const seatGroup = new THREE.Group();
+        
+        // Create seat surface
+        const seatSurface = new THREE.Mesh(
+          new THREE.BoxGeometry(SEAT_WIDTH, SEAT_HEIGHT, SEAT_DEPTH),
+          seatMaterial
+        );
+        seatSurface.position.y = SEAT_HEIGHT/2;
+        seatSurface.castShadow = true;
+        seatSurface.receiveShadow = true;
+        seatGroup.add(seatSurface);
+        
+        // Create seat back
+        const seatBack = new THREE.Mesh(
+          new THREE.BoxGeometry(SEAT_WIDTH, SEAT_BACK_HEIGHT, SEAT_BACK_THICKNESS),
+          seatMaterial
+        );
+        seatBack.position.set(0, SEAT_HEIGHT + SEAT_BACK_HEIGHT/2, -SEAT_DEPTH/2);
+        seatBack.castShadow = true;
+        seatBack.receiveShadow = true;
+        seatGroup.add(seatBack);
+        
+        // Position based on which side of the court
+        switch(side) {
+          case 0: // Top
+            seatGroup.position.set(seatX, rowHeight, COURT_WIDTH/2 + rowDistance);
+            seatGroup.rotation.y = Math.PI; // Added rotation to face the court
+            break;
+          case 1: // Right
+            seatGroup.position.set(COURT_LENGTH/2 + rowDistance, rowHeight, seatX);
+            seatGroup.rotation.y = -Math.PI/2;
+            break;
+          case 2: // Bottom
+            seatGroup.position.set(seatX, rowHeight, -COURT_WIDTH/2 - rowDistance);
+            seatGroup.rotation.y = 0; // Changed from Math.PI to 0
+            break;
+          case 3: // Left
+            seatGroup.position.set(-COURT_LENGTH/2 - rowDistance, rowHeight, seatX);
+            seatGroup.rotation.y = Math.PI/2;
+            break;
+        }
+        
+        standGroup.add(seatGroup);
+      }
+    }
+  }
+
+  scene.add(standGroup);
+}
+
 // Build scene
 createBasketballCourt(scene, COURT_LENGTH, COURT_WIDTH, COURT_HEIGHT, RIM_TO_BACKBOARD_X, VISIBLE_COURT_OFFSET);
 const courtHalfLength = COURT_LENGTH / 2;
@@ -634,6 +722,7 @@ createBasketballHoop(-courtHalfLength, 0);         // Left hoop
 createBasketballHoop(courtHalfLength, Math.PI);    // Right hoop
 createBasketball();
 createCourtLighting(); // Add court lighting
+createStadiumStands(); // Add stadium stands
 createUI();
 
 const cameraTranslate = new THREE.Matrix4();
