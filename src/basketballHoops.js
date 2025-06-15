@@ -1,3 +1,4 @@
+import { createNbaLogoTexture } from "./textures/nbaLogo.js";
 const RIM_RADIUS = 0.225;
 const RIM_TUBE_RADIUS = 0.02;
 const RIM_HEIGHT_ABOVE_GROUND = 3.05;
@@ -56,10 +57,19 @@ function createBasketballHoop(scene, hoopX, rotationY) {
   scene.add(hoopGroup);
 }
 
-function createBackboard() {
+function createBackboard() { 
+  // Use your own values for BACKBOARD_WIDTH and BACKBOARD_HEIGHT (in meters)
+  const texture = createBackboardTexture(BACKBOARD_WIDTH, BACKBOARD_HEIGHT, Math.floor(0.25 * 200)); // NBA logo ~25% of board height
+
+  const material = new THREE.MeshPhongMaterial({
+    map: texture,
+    transparent: true,
+    opacity: 1 // Canvas already simulates opacity
+  });
+
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(BACKBOARD_THICKNESS, BACKBOARD_HEIGHT, BACKBOARD_WIDTH),
-    new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 })
+    material
   );
   mesh.position.set(
     BACKBOARD_THICKNESS / 2,
@@ -69,6 +79,7 @@ function createBackboard() {
   mesh.castShadow = true;
   return mesh;
 }
+
 
 function createRim() {
   const mesh = new THREE.Mesh(
@@ -84,6 +95,42 @@ function createRim() {
   mesh.castShadow = true;
   return mesh;
 }
+
+// You must already have createNbaLogoTexture imported!
+
+function createBackboardTexture(width, height, nbaLogoSizePx = 96) {
+  // Make the canvas the same size as the backboard (for max fidelity)
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.ceil(width * 200);   // for sharpness, 200 px per meter
+  canvas.height = Math.ceil(height * 200);
+  const ctx = canvas.getContext('2d');
+
+  // Draw white background, partial opacity (simulate 0.8 opacity)
+  ctx.globalAlpha = 0.8;
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.globalAlpha = 1.0;
+
+  // Draw NBA logo in top-left corner (with some margin)
+  const nbaLogoTexture = createNbaLogoTexture(nbaLogoSizePx);
+  // We need to extract the image from the THREE.Texture:
+  const logoImage = nbaLogoTexture.image;
+  const margin = Math.floor(canvas.width * 0.03);
+  ctx.drawImage(
+    logoImage,
+    margin,
+    margin,
+    nbaLogoSizePx,
+    nbaLogoSizePx * 2.22 // maintain logo aspect ratio
+  );
+
+  // Return as THREE.js texture
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.anisotropy = 16;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 
 function createNet(rim) {
   const netMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });

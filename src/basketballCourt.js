@@ -1,3 +1,5 @@
+import { createParquetTexture } from "./textures/parquet.js";
+
 const VISIBLE_COURT_OFFSET = 2;
 const COURT_LENGTH = 28.65;
 const COURT_WIDTH = 15.24;
@@ -18,12 +20,30 @@ export function createBasketballCourt(scene) {
 }
 
 function addCourtFloor(scene) {
+  // Generate parquet texture (adjust size/tileSize as needed)
+  const parquetTexture = createParquetTexture(1024, 480); // Higher size = sharper detail
+
+  // Optionally tile the texture to match the court's real dimensions
+  parquetTexture.repeat.set(
+    VISIBLE_COURT_LENGTH / 2,   // Number of texture tiles along court length
+    VISIBLE_COURT_WIDTH / 2     // Number of texture tiles along width
+  );
+  parquetTexture.wrapS = parquetTexture.wrapT = THREE.RepeatWrapping;
+  parquetTexture.anisotropy = 16;
+
   const courtGeometry = new THREE.BoxGeometry(VISIBLE_COURT_LENGTH, COURT_HEIGHT, VISIBLE_COURT_WIDTH);
-  const courtMaterial = new THREE.MeshPhongMaterial({ color: 0xc68642, shininess: 50 });
+
+  const courtMaterial = new THREE.MeshPhongMaterial({
+    map: parquetTexture,
+    shininess: 50
+  });
+
   const court = new THREE.Mesh(courtGeometry, courtMaterial);
   court.receiveShadow = true;
+  court.position.y = COURT_HEIGHT / 2; // Raise the court if needed (so top is at y=COURT_HEIGHT)
   scene.add(court);
 }
+
 
 function addCourtLines(scene) {
   const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
