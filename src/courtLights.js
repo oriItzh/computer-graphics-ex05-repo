@@ -68,14 +68,16 @@ export function createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH) {
         LIGHT_POLE_HEIGHT + LAMP_HEIGHT/2,
         poleZ
       );
-      spotlight.angle = Math.PI / 4; // 45 degrees
-      spotlight.penumbra = 0.2;
-      spotlight.decay = 1;
-      spotlight.distance = 20;
-      // spotlight.castShadow = true;
+      spotlight.angle = Math.PI / 6; // 30 degrees
+      spotlight.penumbra = 0.3;
+      spotlight.decay = 0.8;
+      spotlight.distance = 25;
+      spotlight.castShadow = true;
       
       // Make light face the court
-      spotlight.target.position.set(poleX, 0, poleZ/5);
+      const targetX = poleX;
+      const targetZ = poleZ + (side === 1 ? -COURT_WIDTH/2.5 : COURT_WIDTH/2.5);
+      spotlight.target.position.set(targetX, 0, targetZ);
       lightPoleGroup.add(spotlight.target);
       lightPoleGroup.add(spotlight);
     }

@@ -47,16 +47,18 @@ export function createBasketballTexture(size = 1024) {
   ctx.stroke();
 
   // === 3. Elliptical seam ===
-  const ellipseMajor = 0.9 * size; // wider ellipse
+  const ellipseMajor = 0.92 * size;
   const ellipseMinor = 0.6 * size;
-  const angleOffset = 18 * (Math.PI / 180); // slight angular cut-off
-
+  const pinchStrength = 0.55;
+  const angleOffset = 14 * (Math.PI / 180);
+  
   ctx.beginPath();
-  const steps = 300;
+  const steps = 450;
   for (let i = 0; i <= steps; i++) {
     const t = angleOffset + (i / steps) * (2 * Math.PI - 2 * angleOffset);
     const x = cx + (ellipseMajor / 2) * Math.cos(t);
-    const y = cy + (ellipseMinor / 2) * Math.sin(t);
+    const pinch = 1 - pinchStrength * Math.pow(Math.cos(2 * t), 2);
+    const y = cy + (ellipseMinor / 2) * Math.sin(t) * pinch;
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }

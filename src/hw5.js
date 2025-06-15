@@ -21,11 +21,11 @@ scene.background = new THREE.Color(0x000000);
 // Lighting
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(10, 20, 15);
-scene.add(directionalLight);
+// const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+// directionalLight.position.set(10, 20, 15);
+// scene.add(directionalLight);
 renderer.shadowMap.enabled = true;
-directionalLight.castShadow = true;
+// directionalLight.castShadow = true;
 
 // --- DIMENSIONS & CONSTANTS (all units in meters) ---
 const COURT_LENGTH = 28.65; // NBA: 94 feet = 28.65 meters
