@@ -15,7 +15,7 @@ function randomWoodColor(base = [200, 140, 60], variation = 15) {
  * @param {number} tileSize - Size of each wood "plank" block (pixels).
  * @returns {THREE.Texture}
  */
-export function createParquetTexture(size = 512, tileSize = 128, plankWidth = 24) {
+export function createParquetTexture(size = 4096, tileSize = 2048, plankWidth = tileSize/8) {
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
@@ -35,7 +35,7 @@ export function createParquetTexture(size = 512, tileSize = 128, plankWidth = 24
         ctx.fillRect(x, y, tileSize, plankWidth);
   
         // Draw a thin, light groove below each plank
-        ctx.strokeStyle = "rgba(180, 150, 90, 0.18)";
+        ctx.strokeStyle = "rgba(148, 125, 78, 0.18)";
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(x, y + plankWidth - 0.5);
