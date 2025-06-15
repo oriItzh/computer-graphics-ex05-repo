@@ -11,6 +11,7 @@ export function createBasketball(scene) {
   });
   const ball = new THREE.Mesh(ballGeometry, ballMaterial);
   ball.position.set(0, BALL_RADIUS + BALL_GROUND_OFFSET, 0);
+  ball.castShadow = true;
   scene.add(ball);
   return ball;
 

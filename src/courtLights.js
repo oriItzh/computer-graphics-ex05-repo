@@ -43,7 +43,7 @@ export function createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH) {
         LIGHT_POLE_HEIGHT + LAMP_HEIGHT/2,
         poleZ
       );
-      lamp.castShadow = true;
+      // lamp.castShadow = true;
       lightPoleGroup.add(lamp);
 
       // Create three white circular light panels
@@ -72,7 +72,7 @@ export function createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH) {
       spotlight.penumbra = 0.2;
       spotlight.decay = 1;
       spotlight.distance = 20;
-      spotlight.castShadow = true;
+      // spotlight.castShadow = true;
       
       // Make light face the court
       spotlight.target.position.set(poleX, 0, poleZ/5);

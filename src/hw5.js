@@ -35,7 +35,7 @@ const COURT_WIDTH = 15.4
 createBasketballCourt(scene);
 createBasketballHoops(scene, COURT_LENGTH);         // Left hoop
 createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH); // 15 meters wide court
-// createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH); // 15 meters wide court
+createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH); // 15 meters wide court
 createBasketball(scene);
 drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
 createUI();
