@@ -9,6 +9,7 @@ const SEAT_BACK_HEIGHT = 0.6;
 const SEAT_BACK_THICKNESS = 0.05;
 const SEAT_SPACING = 0.1;
 const ROW_SPACING = 0.1;
+const STADIUM_CAPACITY_FACTOR = 0.75;
 
 // VIP seat dimensions
 const VIP_STADIUM_DISTANCE = 4; // Distance from court edge
@@ -18,6 +19,8 @@ const VIP_SEAT_HEIGHT = 0.5;
 const VIP_SEAT_BACK_HEIGHT = 0.8;
 const VIP_SEAT_SPACING = 0.2;
 const VIP_ROW_SPACING = 0.15;
+const VIP_CAPACITY_FACTOR = 1.0;
+
 const NUM_VIP_ROWS = 2;
 
 import { createStadiumPerson } from './stadiumPerson.js';
@@ -90,7 +93,7 @@ export function createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH) {
         }
         
         // Add person to VIP seat
-        createStadiumPerson(seatGroup, VIP_SEAT_HEIGHT, VIP_SEAT_WIDTH, VIP_SEAT_DEPTH);
+        createStadiumPerson(seatGroup, VIP_SEAT_HEIGHT, VIP_CAPACITY_FACTOR);
         
         standGroup.add(seatGroup);
       }
@@ -157,7 +160,7 @@ export function createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH) {
         }
         
         // Add person to regular seat
-        createStadiumPerson(seatGroup, SEAT_HEIGHT, SEAT_WIDTH, SEAT_DEPTH);
+        createStadiumPerson(seatGroup, SEAT_HEIGHT,STADIUM_CAPACITY_FACTOR);
         
         standGroup.add(seatGroup);
       }

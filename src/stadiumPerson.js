@@ -32,9 +32,9 @@ function getRandomColor(colors) {
     return new THREE.Color(color[0], color[1], color[2]);
 }
 
-export function createStadiumPerson(seatGroup, seatSurfaceHeight, seatWidth, seatDepth) {
+export function createStadiumPerson(seatGroup, seatSurfaceHeight, capacity_factor=0.75) {
     // 75% chance to create a person
-    if (Math.random() < 0.25) return;
+    if (Math.random() > capacity_factor) return;
     const personGroup = new THREE.Group();
     personGroup.position.y = seatSurfaceHeight; // Move the entire person group up by the seat's height
     
