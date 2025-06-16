@@ -8,7 +8,7 @@ const SEAT_HEIGHT = 0.4;
 const SEAT_BACK_HEIGHT = 0.6;
 const SEAT_BACK_THICKNESS = 0.05;
 const SEAT_SPACING = 0.1;
-const ROW_SPACING = 0.2;
+const ROW_SPACING = 0.1;
 
 // VIP seat dimensions
 const VIP_STADIUM_DISTANCE = 4; // Distance from court edge
@@ -17,8 +17,10 @@ const VIP_SEAT_DEPTH = 0.7;
 const VIP_SEAT_HEIGHT = 0.5;
 const VIP_SEAT_BACK_HEIGHT = 0.8;
 const VIP_SEAT_SPACING = 0.2;
-const VIP_ROW_SPACING = 0.3;
+const VIP_ROW_SPACING = 0.15;
 const NUM_VIP_ROWS = 2;
+
+import { createStadiumPerson } from './stadiumPerson.js';
 
 export function createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH) {
   const blueSeatMaterial = new THREE.MeshPhongMaterial({ color: 0x1e90ff }); // Dodger blue color
@@ -87,6 +89,9 @@ export function createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH) {
             break;
         }
         
+        // Add person to VIP seat
+        createStadiumPerson(seatGroup, VIP_SEAT_HEIGHT, VIP_SEAT_WIDTH, VIP_SEAT_DEPTH);
+        
         standGroup.add(seatGroup);
       }
     }
@@ -150,6 +155,9 @@ export function createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH) {
             seatGroup.rotation.y = Math.PI/2;
             break;
         }
+        
+        // Add person to regular seat
+        createStadiumPerson(seatGroup, SEAT_HEIGHT, SEAT_WIDTH, SEAT_DEPTH);
         
         standGroup.add(seatGroup);
       }
