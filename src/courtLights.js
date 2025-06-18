@@ -2,7 +2,7 @@
 const LIGHT_POLE_HEIGHT = 8; // Height of the lighting poles
 const LIGHT_POLE_RADIUS = 0.15; // Radius of the lighting poles
 const LIGHT_POLE_DISTANCE = 3; // Distance from court lines
-const LIGHT_INTENSITY = 0.8; // Intensity of the spotlights
+const LIGHT_INTENSITY = 0.6; // Intensity of the spotlights
 
 // Lamp dimensions
 const LAMP_WIDTH = 1.5;
@@ -30,6 +30,7 @@ export function createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH) {
   }
 
   scene.add(lightPoleGroup);
+  return lightPoleGroup; // Return the light group so it can be manipulated later
 }
 
 

@@ -10,7 +10,7 @@ const RIM_RADIUS = 0.225;
 const BACKBOARD_THICKNESS = 0.05;
 const RIM_TO_BACKBOARD_X = BACKBOARD_THICKNESS + RIM_RADIUS;
 const LINE_OFFSET = 0.04;
-const COURT_SHININESS = 0.3;
+const COURT_SHININESS = 0.2;
 
 // Global line material with increased width
 const LINE_WIDTH = 2;

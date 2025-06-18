@@ -21,11 +21,16 @@ scene.background = new THREE.Color(0x000000);
 // Lighting
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
-// const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-// directionalLight.position.set(10, 20, 15);
-// scene.add(directionalLight);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+directionalLight.position.set(10, 20, 15);
+scene.add(directionalLight);
 renderer.shadowMap.enabled = true;
-// directionalLight.castShadow = true;
+directionalLight.castShadow = true;
+
+// Track light states
+let isMainLightOn = true;
+let isCourtLightOn = true;
+let courtLightGroup = null;
 
 // --- DIMENSIONS & CONSTANTS (all units in meters) ---
 const COURT_LENGTH = 28.65; // NBA: 94 feet = 28.65 meters
@@ -35,9 +40,9 @@ const COURT_WIDTH = 15.4
 createBasketballCourt(scene);
 createBasketballHoops(scene, COURT_LENGTH);         // Left hoop
 createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH); // 15 meters wide court
-createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH); // 15 meters wide court
+courtLightGroup = createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH); // Store reference to court lights
 createBasketball(scene);
-// drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
+drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
 createUI();
 
 const cameraTranslate = new THREE.Matrix4();
@@ -90,6 +95,24 @@ document.addEventListener('keydown', (e) => {
       break;
     case '4':
       setCameraPreset(cameraPresets.rightHoop);
+      break;
+    case 'l':
+      // Toggle main lights
+      isMainLightOn = !isMainLightOn;
+      ambientLight.visible = isMainLightOn;
+      directionalLight.visible = isMainLightOn;
+      break;
+    case 'k':
+      // Toggle court lights
+      isCourtLightOn = !isCourtLightOn;
+      if (courtLightGroup) {
+        courtLightGroup.traverse((child) => {
+          if (child instanceof THREE.SpotLight) {
+            child.visible = isCourtLightOn;
+            child.intensity = isCourtLightOn ? 0.6 : 0; // Also toggle intensity
+          }
+        });
+      }
       break;
   }
 });
