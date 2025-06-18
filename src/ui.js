@@ -27,6 +27,10 @@ export function createUI() {
   controlsContainer.innerHTML = `
     <h3 style="margin: 0 0 10px 0">Controls:</h3>
     <p style="margin: 5px 0">O - Toggle orbit camera</p>
+    <p style="margin: 5px 0">1 - Default view</p>
+    <p style="margin: 5px 0">2 - Top view</p>
+    <p style="margin: 5px 0">3 - Left hoop view</p>
+    <p style="margin: 5px 0">4 - Right hoop view</p>
     <p style="margin: 5px 0">Arrow Keys - Move basketball (coming in HW06)</p>
     <p style="margin: 5px 0">W/S - Adjust power (coming in HW06)</p>
     <p style="margin: 5px 0">Spacebar - Shoot (coming in HW06)</p>

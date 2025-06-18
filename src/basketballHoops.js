@@ -57,6 +57,44 @@ function createBasketballHoop(scene, hoopX, rotationY) {
   scene.add(hoopGroup);
 }
 
+function createBackboardFrame(backboardMesh) {
+  const FRAME_THICKNESS = 0.07; // thicker frame
+  const FRAME_DEPTH = BACKBOARD_THICKNESS + 0.02; // slightly deeper than the backboard
+  const frameMaterial = new THREE.MeshPhongMaterial({ color: 0x333333, metalness: 0.8, shininess: 80 }); // darker and more metallic
+
+  // Top frame
+  const topFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(FRAME_DEPTH, FRAME_THICKNESS, BACKBOARD_WIDTH + 2 * FRAME_THICKNESS),
+    frameMaterial
+  );
+  topFrame.position.set(0, BACKBOARD_HEIGHT / 2 + FRAME_THICKNESS / 2, 0);
+  backboardMesh.add(topFrame);
+
+  // Bottom frame
+  const bottomFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(FRAME_DEPTH, FRAME_THICKNESS, BACKBOARD_WIDTH + 2 * FRAME_THICKNESS),
+    frameMaterial
+  );
+  bottomFrame.position.set(0, -BACKBOARD_HEIGHT / 2 - FRAME_THICKNESS / 2, 0);
+  backboardMesh.add(bottomFrame);
+
+  // Left frame
+  const leftFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(FRAME_DEPTH, BACKBOARD_HEIGHT, FRAME_THICKNESS),
+    frameMaterial
+  );
+  leftFrame.position.set(0, 0, -BACKBOARD_WIDTH / 2 - FRAME_THICKNESS / 2);
+  backboardMesh.add(leftFrame);
+
+  // Right frame
+  const rightFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(FRAME_DEPTH, BACKBOARD_HEIGHT, FRAME_THICKNESS),
+    frameMaterial
+  );
+  rightFrame.position.set(0, 0, BACKBOARD_WIDTH / 2 + FRAME_THICKNESS / 2);
+  backboardMesh.add(rightFrame);
+}
+
 function createBackboard() { 
   // Use your own values for BACKBOARD_WIDTH and BACKBOARD_HEIGHT (in meters)
   const texture = createBackboardTexture(BACKBOARD_WIDTH, BACKBOARD_HEIGHT, Math.floor(0.25 * 200)); // NBA logo ~25% of board height
@@ -77,9 +115,12 @@ function createBackboard() {
     0
   );
   mesh.castShadow = true;
+
+  // Add metal frame using helper
+  createBackboardFrame(mesh);
+
   return mesh;
 }
-
 
 function createRim() {
   const mesh = new THREE.Mesh(

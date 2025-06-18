@@ -37,16 +37,62 @@ createBasketballHoops(scene, COURT_LENGTH);         // Left hoop
 createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH); // 15 meters wide court
 createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH); // 15 meters wide court
 createBasketball(scene);
-drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
+// drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
 createUI();
 
 const cameraTranslate = new THREE.Matrix4();
 cameraTranslate.makeTranslation(0, 15, 30);
 camera.applyMatrix4(cameraTranslate);
 
+// Camera preset positions
+const cameraPresets = {
+  default: {
+    position: new THREE.Vector3(0, 15, 30),
+    target: new THREE.Vector3(0, 0, 0)
+  },
+  top: {
+    position: new THREE.Vector3(0, 40, 0),
+    target: new THREE.Vector3(0, 0, 0)
+  },
+  leftHoop: {
+    position: new THREE.Vector3(-COURT_LENGTH/2 + 5.79, 3, 0), // Behind free throw line
+    target: new THREE.Vector3(-COURT_LENGTH/2, 3, 0) // Looking at the hoop
+  },
+  rightHoop: {
+    position: new THREE.Vector3(COURT_LENGTH/2 - 5.79, 3, 0), // Behind free throw line
+    target: new THREE.Vector3(COURT_LENGTH/2, 3, 0) // Looking at the hoop
+  }
+};
+
 const controls = new OrbitControls(camera, renderer.domElement);
 let isOrbitEnabled = true;
-document.addEventListener('keydown', (e) => { if (e.key === "o") isOrbitEnabled = !isOrbitEnabled; });
+
+// Function to set camera position and target
+function setCameraPreset(preset) {
+  camera.position.copy(preset.position);
+  controls.target.copy(preset.target);
+  controls.update();
+}
+
+document.addEventListener('keydown', (e) => {
+  switch(e.key.toLowerCase()) {
+    case 'o':
+      isOrbitEnabled = !isOrbitEnabled;
+      break;
+    case '1':
+      setCameraPreset(cameraPresets.default);
+      break;
+    case '2':
+      setCameraPreset(cameraPresets.top);
+      break;
+    case '3':
+      setCameraPreset(cameraPresets.leftHoop);
+      break;
+    case '4':
+      setCameraPreset(cameraPresets.rightHoop);
+      break;
+  }
+});
 
 function animate() {
   requestAnimationFrame(animate);

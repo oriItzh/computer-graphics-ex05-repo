@@ -11,6 +11,28 @@ const LAMP_DEPTH = 0.7;
 const LIGHT_PANEL_RADIUS = 0.15;
 const LIGHT_PANEL_SPACING = 0.4; // Space between light panels
 
+export function createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH) {
+  const poleMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
+  const lampMaterial = new THREE.MeshPhongMaterial({ color: 0x404040 });
+  const lightPanelMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.5 });
+  const lightPoleGroup = new THREE.Group();
+  const LIGHT_POLE_SPACING = COURT_LENGTH / 3; // Space between poles evenly
+
+  // Create poles and lights for both sides of the court
+  for (let side = -1; side <= 1; side += 2) { // -1 for left side, 1 for right side
+    for (let i = -1; i <= 1; i++) { // Create 3 poles on each side
+      const poleX = i * LIGHT_POLE_SPACING;
+      const poleZ = (COURT_WIDTH/2 + LIGHT_POLE_DISTANCE) * side;
+      
+      const singleLight = createSingleCourtLight(poleX, poleZ, side, poleMaterial, lampMaterial, lightPanelMaterial, COURT_WIDTH);
+      lightPoleGroup.add(singleLight);
+    }
+  }
+
+  scene.add(lightPoleGroup);
+}
+
+
 function createSingleCourtLight(poleX, poleZ, side, poleMaterial, lampMaterial, lightPanelMaterial, COURT_WIDTH) {
   const lightGroup = new THREE.Group();
 
@@ -70,25 +92,4 @@ function createSingleCourtLight(poleX, poleZ, side, poleMaterial, lampMaterial, 
   lightGroup.add(spotlight);
 
   return lightGroup;
-}
-
-export function createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH) {
-  const poleMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
-  const lampMaterial = new THREE.MeshPhongMaterial({ color: 0x404040 });
-  const lightPanelMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.5 });
-  const lightPoleGroup = new THREE.Group();
-  const LIGHT_POLE_SPACING = COURT_LENGTH / 3; // Space between poles evenly
-
-  // Create poles and lights for both sides of the court
-  for (let side = -1; side <= 1; side += 2) { // -1 for left side, 1 for right side
-    for (let i = -1; i <= 1; i++) { // Create 3 poles on each side
-      const poleX = i * LIGHT_POLE_SPACING;
-      const poleZ = (COURT_WIDTH/2 + LIGHT_POLE_DISTANCE) * side;
-      
-      const singleLight = createSingleCourtLight(poleX, poleZ, side, poleMaterial, lampMaterial, lightPanelMaterial, COURT_WIDTH);
-      lightPoleGroup.add(singleLight);
-    }
-  }
-
-  scene.add(lightPoleGroup);
 }
