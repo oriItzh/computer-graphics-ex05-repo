@@ -229,10 +229,13 @@ function createNet(rim) {
 }
 
 function createPole(backboard) {
+  // Create the support pole for the backboard
   const mesh = new THREE.Mesh(
     new THREE.CylinderGeometry(POLE_RADIUS, POLE_RADIUS, POLE_HEIGHT, 8),
     new THREE.MeshPhongMaterial({ color: 0x808080 })
   );
+  
+  // Position pole relative to backboard
   mesh.position.set(
     backboard.position.x - POLE_TO_BACKBOARD_X,
     POLE_HEIGHT / 2,

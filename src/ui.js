@@ -31,12 +31,53 @@ export function createUI() {
     <p style="margin: 5px 0">2 - Top view</p>
     <p style="margin: 5px 0">3 - Left hoop view</p>
     <p style="margin: 5px 0">4 - Right hoop view</p>
-    <p style="margin: 5px 0">L - Turn main scene lights on/off</p>
-    <p style="margin: 5px 0">K - Turn court lights on/off</p>
+    <p style="margin: 5px 0">L - Toggle main lights</p>
+    <p style="margin: 5px 0">K - Toggle court lights</p>
     <p style="margin: 5px 0">Arrow Keys - Move basketball (coming in HW06)</p>
     <p style="margin: 5px 0">W/S - Adjust power (coming in HW06)</p>
     <p style="margin: 5px 0">Spacebar - Shoot (coming in HW06)</p>
     <p style="margin: 5px 0">R - Reset ball position (coming in HW06)</p>
   `;
   document.body.appendChild(controlsContainer);
+
+  // Add light intensity controls
+  const lightControlsContainer = document.createElement('div');
+  lightControlsContainer.style.position = 'absolute';
+  lightControlsContainer.style.bottom = '20px';
+  lightControlsContainer.style.right = '20px';
+  lightControlsContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+  lightControlsContainer.style.color = 'white';
+  lightControlsContainer.style.padding = '15px';
+  lightControlsContainer.style.borderRadius = '5px';
+  lightControlsContainer.style.fontFamily = 'Arial, sans-serif';
+  lightControlsContainer.style.fontSize = '14px';
+  lightControlsContainer.style.width = '200px';
+  lightControlsContainer.innerHTML = `
+    <h3 style="margin: 0 0 10px 0">Light Controls:</h3>
+    <div style="margin-bottom: 10px">
+      <label for="mainLightIntensity" style="display: block; margin-bottom: 5px">Main Light Intensity:</label>
+      <input type="range" id="mainLightIntensity" min="0" max="1" step="0.1" value="0.7" style="width: 100%">
+      <span id="mainLightValue" style="float: right">0.7</span>
+    </div>
+    <div>
+      <label for="courtLightIntensity" style="display: block; margin-bottom: 5px">Court Light Intensity:</label>
+      <input type="range" id="courtLightIntensity" min="0" max="1" step="0.1" value="0.4" style="width: 100%">
+      <span id="courtLightValue" style="float: right">0.4</span>
+    </div>
+  `;
+  document.body.appendChild(lightControlsContainer);
+
+  // Add event listeners for the sliders
+  const mainLightSlider = document.getElementById('mainLightIntensity');
+  const courtLightSlider = document.getElementById('courtLightIntensity');
+  const mainLightValue = document.getElementById('mainLightValue');
+  const courtLightValue = document.getElementById('courtLightValue');
+
+  // Store the elements in the window object so they can be accessed from hw5.js
+  window.lightControls = {
+    mainLightSlider,
+    courtLightSlider,
+    mainLightValue,
+    courtLightValue
+  };
 }
