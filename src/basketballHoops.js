@@ -9,9 +9,11 @@ const BACKBOARD_HEIGHT = 1.05;
 const BACKBOARD_THICKNESS = 0.05;
 const BACKBOARD_BOTTOM_Y = RIM_HEIGHT_ABOVE_GROUND - BACKBOARD_HEIGHT / 8;
 
-const NET_SEGMENTS = 8;
-const NET_HEIGHT = 0.4;
-const NET_BOTTOM_RADIUS = RIM_RADIUS * 0.7;
+const NET_SEGMENTS = 16;
+const NET_HEIGHT = 0.45;
+const NET_BOTTOM_RADIUS = RIM_RADIUS * 0.55;
+const NET_MIDDLE_RADIUS = RIM_RADIUS * 0.70;
+const NET_MIDDLE_Y = RIM_HEIGHT_ABOVE_GROUND - NET_HEIGHT * 0.4;
 
 const POLE_RADIUS = 0.1;
 const POLE_HEIGHT = 4;
@@ -179,13 +181,25 @@ function createNet(rim) {
   const netSegments = NET_SEGMENTS;
   const netPoints = [];
 
+  // Create points for the rim, middle, and bottom sections
   for (let i = 0; i <= netSegments; i++) {
     const angle = (i / netSegments) * Math.PI * 2;
+    
+    // Rim points
     netPoints.push(new THREE.Vector3(
       rim.position.x + Math.cos(angle) * RIM_RADIUS,
       rim.position.y,
       rim.position.z + Math.sin(angle) * RIM_RADIUS
     ));
+    
+    // Middle points
+    netPoints.push(new THREE.Vector3(
+      rim.position.x + Math.cos(angle) * NET_MIDDLE_RADIUS,
+      NET_MIDDLE_Y,
+      rim.position.z + Math.sin(angle) * NET_MIDDLE_RADIUS
+    ));
+    
+    // Bottom points
     netPoints.push(new THREE.Vector3(
       rim.position.x + Math.cos(angle) * NET_BOTTOM_RADIUS,
       netBottomY,
@@ -194,37 +208,58 @@ function createNet(rim) {
   }
 
   const netLines = [];
+  
+  // Create vertical lines
   for (let i = 0; i < netSegments; i++) {
-    // Vertical
+    const baseIndex = i * 3;
+    // Rim to middle
     netLines.push(new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints([netPoints[i * 2], netPoints[i * 2 + 1]]),
+      new THREE.BufferGeometry().setFromPoints([netPoints[baseIndex], netPoints[baseIndex + 1]]),
       netMaterial
     ));
-    // Diagonal forward
+    // Middle to bottom
     netLines.push(new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints([netPoints[i * 2], netPoints[((i + 1) * 2 + 1) % (netSegments * 2)]]),
-      netMaterial
-    ));
-    // Diagonal backward
-    netLines.push(new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints([netPoints[i * 2 + 1], netPoints[((i + 1) * 2) % (netSegments * 2)]]),
+      new THREE.BufferGeometry().setFromPoints([netPoints[baseIndex + 1], netPoints[baseIndex + 2]]),
       netMaterial
     ));
   }
-  // Bottom circle
-  const bottomCirclePoints = [];
-  for (let i = 0; i <= netSegments; i++) {
-    const angle = (i / netSegments) * Math.PI * 2;
-    bottomCirclePoints.push(new THREE.Vector3(
-      rim.position.x + Math.cos(angle) * NET_BOTTOM_RADIUS,
-      netBottomY,
-      rim.position.z + Math.sin(angle) * NET_BOTTOM_RADIUS
+
+  // Create diagonal lines
+  for (let i = 0; i < netSegments; i++) {
+    const baseIndex = i * 3;
+    const nextBaseIndex = ((i + 1) % netSegments) * 3;
+    
+    // Rim to middle diagonal
+    netLines.push(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([netPoints[baseIndex], netPoints[nextBaseIndex + 1]]),
+      netMaterial
+    ));
+    
+    // Middle to bottom diagonal
+    netLines.push(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([netPoints[baseIndex + 1], netPoints[nextBaseIndex + 2]]),
+      netMaterial
+    ));
+    
+    // Cross diagonals in middle section
+    netLines.push(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([netPoints[baseIndex + 1], netPoints[nextBaseIndex + 1]]),
+      netMaterial
     ));
   }
-  netLines.push(new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints(bottomCirclePoints),
-    netMaterial
-  ));
+
+  // Create circles at each level
+  for (let level = 0; level < 3; level++) {
+    const circlePoints = [];
+    for (let i = 0; i <= netSegments; i++) {
+      circlePoints.push(netPoints[i * 3 + level]);
+    }
+    netLines.push(new THREE.LineLoop(
+      new THREE.BufferGeometry().setFromPoints(circlePoints),
+      netMaterial
+    ));
+  }
+
   return netLines;
 }
 

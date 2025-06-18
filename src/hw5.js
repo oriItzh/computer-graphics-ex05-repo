@@ -145,6 +145,9 @@ function setupEventListeners() {
           directionalLight.intensity = 0;
           ambientLight.intensity = 0;
         }
+        // Update slider value display
+        window.lightControls.mainLightValue.textContent = isMainLightOn ? 
+          window.lightControls.mainLightSlider.value : '0.0';
         break;
       case 'k':
         // Toggle court lights
@@ -154,13 +157,17 @@ function setupEventListeners() {
             if (child instanceof THREE.SpotLight) {
               child.visible = isCourtLightOn;
               if (isCourtLightOn) {
-                child.intensity = parseFloat(window.lightControls.courtLightSlider.value);
+                const value = parseFloat(window.lightControls.courtLightSlider.value);
+                child.intensity = value;
               } else {
                 child.intensity = 0;
               }
             }
           });
         }
+        // Update slider value display
+        window.lightControls.courtLightValue.textContent = isCourtLightOn ? 
+          window.lightControls.courtLightSlider.value : '0.0';
         break;
     }
   });
