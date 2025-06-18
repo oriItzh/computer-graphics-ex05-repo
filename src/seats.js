@@ -75,9 +75,16 @@ function createSeat(side, row, seat, isVIP, COURT_LENGTH, COURT_WIDTH) {
   const rowSpacing = isVIP ? VIP_ROW_SPACING : ROW_SPACING;
   const stadiumDistance = isVIP ? VIP_STADIUM_DISTANCE : STADIUM_DISTANCE;
   const capacity_factor =  isVIP ? VIP_CAPACITY_FACTOR : STADIUM_CAPACITY_FACTOR;
-  const material = isVIP ? 
-    new THREE.MeshPhongMaterial({ color: 0xffffff }) : // White for VIP
-    new THREE.MeshPhongMaterial({ color: 0x1e90ff });  // Blue for regular
+
+  let material;
+  if (isVIP) {
+    material = new THREE.MeshPhongMaterial({ color: 0xffffff }); // White for VIP
+  } else if (side == 1) {
+    material = new THREE.MeshPhongMaterial({ color: 0xff0000 }); // Red for regular seats on side 1
+  } else {
+    material = new THREE.MeshPhongMaterial({ color: 0x1e90ff }); // Blue for regular seats on other sides
+  }
+  
 
   // Calculate row-specific values
   const rowHeight = isVIP ? 
