@@ -46,16 +46,12 @@ createBasketball(scene);
 drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
 createUI();
 
-// Initial camera setup
-const cameraTranslate = new THREE.Matrix4();
-cameraTranslate.makeTranslation(0, 15, 30);
-camera.applyMatrix4(cameraTranslate);
 
 // Camera preset positions for different views
 const cameraPresets = {
   default: {
-    position: new THREE.Vector3(0, 15, 30),
-    target: new THREE.Vector3(0, 0, 0)
+    position: new THREE.Vector3(-(COURT_LENGTH/2 + 4), 15, COURT_WIDTH/2 + 4),
+    target: new THREE.Vector3(0, 5, 0)
   },
   top: {
     position: new THREE.Vector3(0, 40, 0),
@@ -71,6 +67,9 @@ const cameraPresets = {
   }
 };
 
+// Initial camera setup
+camera.position.copy(cameraPresets.default.position);
+camera.lookAt(cameraPresets.default.target);
 // Camera controls setup
 const controls = new OrbitControls(camera, renderer.domElement);
 let isOrbitEnabled = true;
