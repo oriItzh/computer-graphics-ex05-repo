@@ -61,7 +61,6 @@ A detailed 3D basketball court scene built with Three.js, featuring realistic li
 - **Controls**: Custom implementation of OrbitControls
 
 
-
 ## Project Structure
 
 ```
@@ -89,7 +88,7 @@ src/
   - OrbitControls
   - Basketball texture generation
   - Court lighting system
-  
+
 ## Setup and Running
 
 1. Clone the repository
@@ -97,9 +96,9 @@ src/
    ```bash
    npm install
    ```
-3. Start the development server:
+3. Start the server:
    ```bash
-   npm start
+   node index.js
    ```
 4. Open your browser to `http://localhost:8000`
 

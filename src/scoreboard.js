@@ -151,7 +151,8 @@ export function drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH) {
       poleMaterial
     );
     pole.position.set(0, SCOREBOARD_POLE_HEIGHT / 2, scoreboardZ);
-    // pole.castShadow = true;
+    pole.castShadow = true;
+    pole.receiveShadow = true;
     scoreboardGroup.add(pole);
 
     // Create scoreboard body
@@ -164,7 +165,8 @@ export function drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH) {
       SCOREBOARD_POLE_HEIGHT + SCOREBOARD_HEIGHT / 2,
       scoreboardZ
     );
-    // scoreboard.castShadow = true;
+    scoreboard.castShadow = true;
+    scoreboard.receiveShadow = true;
 
     // Make scoreboard face the court
     if (side === 1) {

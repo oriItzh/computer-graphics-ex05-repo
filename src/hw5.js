@@ -82,6 +82,16 @@ function setCameraPreset(preset) {
 }
 
 function setupEventListeners() {
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    // Update camera aspect ratio
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    
+    // Update renderer size
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
   // Main light intensity control
   window.lightControls.mainLightSlider.addEventListener('input', (e) => {
     const value = parseFloat(e.target.value);
