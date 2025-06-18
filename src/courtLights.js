@@ -11,6 +11,67 @@ const LAMP_DEPTH = 0.7;
 const LIGHT_PANEL_RADIUS = 0.15;
 const LIGHT_PANEL_SPACING = 0.4; // Space between light panels
 
+function createSingleCourtLight(poleX, poleZ, side, poleMaterial, lampMaterial, lightPanelMaterial, COURT_WIDTH) {
+  const lightGroup = new THREE.Group();
+
+  // Create pole
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(LIGHT_POLE_RADIUS, LIGHT_POLE_RADIUS, LIGHT_POLE_HEIGHT, 8),
+    poleMaterial
+  );
+  pole.position.set(poleX, LIGHT_POLE_HEIGHT/2, poleZ);
+  pole.castShadow = true;
+  lightGroup.add(pole);
+
+  // Create lamp fixture
+  const lamp = new THREE.Mesh(
+    new THREE.BoxGeometry(LAMP_WIDTH, LAMP_HEIGHT, LAMP_DEPTH),
+    lampMaterial
+  );
+  lamp.position.set(
+    poleX,
+    LIGHT_POLE_HEIGHT + LAMP_HEIGHT/2,
+    poleZ
+  );
+  lightGroup.add(lamp);
+
+  // Create three white circular light panels
+  for (let j = -1; j <= 1; j++) {
+    const lightPanel = new THREE.Mesh(
+      new THREE.CircleGeometry(LIGHT_PANEL_RADIUS, 32),
+      lightPanelMaterial
+    );
+    lightPanel.position.set(
+      poleX + j * LIGHT_PANEL_SPACING,
+      LIGHT_POLE_HEIGHT + LAMP_HEIGHT/2,
+      poleZ + (LAMP_DEPTH/2 + 0.02) * (side === 1 ? -1 : 1)
+    );
+    lightGroup.add(lightPanel);
+  }
+
+  // Create spotlight
+  const spotlight = new THREE.SpotLight(0xffffff, LIGHT_INTENSITY);
+  spotlight.position.set(
+    poleX,
+    LIGHT_POLE_HEIGHT + LAMP_HEIGHT/2,
+    poleZ
+  );
+  spotlight.angle = Math.PI / 6; // 30 degrees
+  spotlight.penumbra = 0.3;
+  spotlight.decay = 0.8;
+  spotlight.distance = 25;
+  spotlight.castShadow = true;
+  
+  // Make light face the court
+  const targetX = poleX;
+  const targetZ = poleZ + (side === 1 ? -COURT_WIDTH/2.5 : COURT_WIDTH/2.5);
+  spotlight.target.position.set(targetX, 0, targetZ);
+  lightGroup.add(spotlight.target);
+  lightGroup.add(spotlight);
+
+  return lightGroup;
+}
+
 export function createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH) {
   const poleMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
   const lampMaterial = new THREE.MeshPhongMaterial({ color: 0x404040 });
@@ -23,63 +84,9 @@ export function createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH) {
     for (let i = -1; i <= 1; i++) { // Create 3 poles on each side
       const poleX = i * LIGHT_POLE_SPACING;
       const poleZ = (COURT_WIDTH/2 + LIGHT_POLE_DISTANCE) * side;
-
-      // Create pole
-      const pole = new THREE.Mesh(
-        new THREE.CylinderGeometry(LIGHT_POLE_RADIUS, LIGHT_POLE_RADIUS, LIGHT_POLE_HEIGHT, 8),
-        poleMaterial
-      );
-      pole.position.set(poleX, LIGHT_POLE_HEIGHT/2, poleZ);
-      pole.castShadow = true;
-      lightPoleGroup.add(pole);
-
-      // Create lamp fixture
-      const lamp = new THREE.Mesh(
-        new THREE.BoxGeometry(LAMP_WIDTH, LAMP_HEIGHT, LAMP_DEPTH),
-        lampMaterial
-      );
-      lamp.position.set(
-        poleX,
-        LIGHT_POLE_HEIGHT + LAMP_HEIGHT/2,
-        poleZ
-      );
-      // lamp.castShadow = true;
-      lightPoleGroup.add(lamp);
-
-      // Create three white circular light panels
-      for (let j = -1; j <= 1; j++) {
-        const lightPanel = new THREE.Mesh(
-          new THREE.CircleGeometry(LIGHT_PANEL_RADIUS, 32),
-          lightPanelMaterial
-        );
-        lightPanel.position.set(
-          poleX + j * LIGHT_PANEL_SPACING,
-          LIGHT_POLE_HEIGHT + LAMP_HEIGHT/2,
-          poleZ + (LAMP_DEPTH/2 + 0.02) * (side === 1 ? -1 : 1)
-        );
-        // lightPanel.rotation.y = Math.PI / 2;
-        lightPoleGroup.add(lightPanel);
-      }
-
-      // Create spotlight
-      const spotlight = new THREE.SpotLight(0xffffff, LIGHT_INTENSITY);
-      spotlight.position.set(
-        poleX,
-        LIGHT_POLE_HEIGHT + LAMP_HEIGHT/2,
-        poleZ
-      );
-      spotlight.angle = Math.PI / 6; // 30 degrees
-      spotlight.penumbra = 0.3;
-      spotlight.decay = 0.8;
-      spotlight.distance = 25;
-      spotlight.castShadow = true;
       
-      // Make light face the court
-      const targetX = poleX;
-      const targetZ = poleZ + (side === 1 ? -COURT_WIDTH/2.5 : COURT_WIDTH/2.5);
-      spotlight.target.position.set(targetX, 0, targetZ);
-      lightPoleGroup.add(spotlight.target);
-      lightPoleGroup.add(spotlight);
+      const singleLight = createSingleCourtLight(poleX, poleZ, side, poleMaterial, lampMaterial, lightPanelMaterial, COURT_WIDTH);
+      lightPoleGroup.add(singleLight);
     }
   }
 
