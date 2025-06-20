@@ -23,13 +23,15 @@ A detailed 3D basketball court scene built with Three.js, featuring realistic li
   - Light intensity controls
   - Camera preset switching
   - Light toggling
+  ![Lightings](screenshots/courtlights effect.png)
+
 - **Detailed Components**:
   - A static Basketball
   ![Basketball](screenshots/Basketball_view.png)
   - Basketball hoops with backboards
   ![Basketball Hoops](screenshots/hoop_freethrow_view.png)
   - Court lighting fixtures
-  ![All court view](screenshots/all_court_view.png)
+  ![All court view](screenshots/all_court_view_with_controls.png)
   - Stadium seating
   ![Stadium] (screenshots/side_view.png)
   - Scoreboards
