@@ -6,6 +6,7 @@ import { createUI } from './ui.js';
 import { createStadiumStands } from './seats.js';
 import { createCourtLighting } from './courtLights.js';
 import { drawScoreboards } from './scoreboard.js';
+import { createMovementState, handleMovementKey, updateBasketballPosition, getCourtBoundaries } from './physics-hw06/basketballMovement.js';
 
 // Scene setup
 const scene = new THREE.Scene();
@@ -38,14 +39,17 @@ const COURT_LENGTH = 28.65; // NBA standard: 94 feet
 const COURT_WIDTH = 15.4;
 
 // Scene construction
+const basketball = createBasketball(scene);
 createBasketballCourt(scene);
 createBasketballHoops(scene, COURT_LENGTH);
-createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH);
-courtLightGroup = createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH);
-createBasketball(scene);
-drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
+// createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH);
+// courtLightGroup = createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH);
+// drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
 createUI();
 
+// Basketball movement state (Phase 1)
+const moveState = createMovementState();
+const boundaries = getCourtBoundaries(COURT_LENGTH, COURT_WIDTH);
 
 // Camera preset positions for different views
 const cameraPresets = {
@@ -171,15 +175,30 @@ function setupEventListeners() {
         break;
     }
   });
+
+  // Keyboard controls for basketball movement
+  function handleBasketballMovementKey(e, isDown) {
+    handleMovementKey(e, isDown, moveState);
+  }
+  document.addEventListener('keydown', (e) => handleBasketballMovementKey(e, true));
+  document.addEventListener('keyup', (e) => handleBasketballMovementKey(e, false));
 }
 
 setupEventListeners();
 
 // Animation loop
+let lastTime = performance.now();
 function animate() {
   requestAnimationFrame(animate);
   controls.enabled = isOrbitEnabled;
   controls.update();
+
+  // Basketball movement logic (Phase 1)
+  const now = performance.now();
+  const delta = (now - lastTime) / 1000; // seconds
+  lastTime = now;
+  updateBasketballPosition(basketball, moveState, delta, boundaries);
+
   renderer.render(scene, camera);
 }
 animate();

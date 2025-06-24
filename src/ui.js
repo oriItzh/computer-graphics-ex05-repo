@@ -33,7 +33,7 @@ export function createUI() {
     <p style="margin: 5px 0">4 - Right hoop view</p>
     <p style="margin: 5px 0">L - Toggle main lights</p>
     <p style="margin: 5px 0">K - Toggle court lights</p>
-    <p style="margin: 5px 0">Arrow Keys - Move basketball (coming in HW06)</p>
+    <p style="margin: 5px 0">Arrow Keys - Move basketball</p>
     <p style="margin: 5px 0">W/S - Adjust power (coming in HW06)</p>
     <p style="margin: 5px 0">Spacebar - Shoot (coming in HW06)</p>
     <p style="margin: 5px 0">R - Reset ball position (coming in HW06)</p>
