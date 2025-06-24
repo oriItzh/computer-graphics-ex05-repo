@@ -51,40 +51,63 @@ function addCourtFloor(scene) {
 }
 
 function addCourtLines(scene) {
-  // Center line
-  const centerLineGeometry = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(0, COURT_HEIGHT/2 + LINE_OFFSET, -COURT_WIDTH/2),
-    new THREE.Vector3(0, COURT_HEIGHT/2 + LINE_OFFSET, COURT_WIDTH/2)
-  ]);
-  scene.add(new THREE.Line(centerLineGeometry, lineMaterial));
+  const lineWidth = 0.05; 
+  const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
 
-  // Court outline
-  const courtOutlinePoints = [
-    new THREE.Vector3(0, COURT_HEIGHT/2 + LINE_OFFSET, COURT_WIDTH/2),
-    new THREE.Vector3(0, COURT_HEIGHT/2 + LINE_OFFSET, -COURT_WIDTH/2),
-    new THREE.Vector3(COURT_LENGTH/2, COURT_HEIGHT/2 + LINE_OFFSET, -COURT_WIDTH/2),
-    new THREE.Vector3(COURT_LENGTH/2, COURT_HEIGHT/2 + LINE_OFFSET, COURT_WIDTH/2),
-    new THREE.Vector3(-COURT_LENGTH/2, COURT_HEIGHT/2 + LINE_OFFSET, COURT_WIDTH/2),
-    new THREE.Vector3(-COURT_LENGTH/2, COURT_HEIGHT/2 + LINE_OFFSET, -COURT_WIDTH/2),
-    new THREE.Vector3(0, COURT_HEIGHT/2 + LINE_OFFSET, -COURT_WIDTH/2),
-  ];
-  const courtOutline = new THREE.BufferGeometry().setFromPoints(courtOutlinePoints);
-  scene.add(new THREE.Line(courtOutline, lineMaterial));
+  // Center line (vertical, at x=0)
+  const centerLinePlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(lineWidth, COURT_WIDTH),
+    lineMaterial
+  );
+  centerLinePlane.position.set(0, COURT_HEIGHT/2 + 0.03, 0);
+  centerLinePlane.rotation.x = -Math.PI / 2;
+  scene.add(centerLinePlane);
 
-  // Center circle
+  // Court outline (4 sides as planes)
+  // Top
+  const topLine = new THREE.Mesh(
+    new THREE.PlaneGeometry(COURT_LENGTH, lineWidth),
+    lineMaterial
+  );
+  topLine.position.set(0, COURT_HEIGHT/2 + 0.03, COURT_WIDTH/2);
+  topLine.rotation.x = -Math.PI / 2;
+  scene.add(topLine);
+
+  // Bottom
+  const bottomLine = new THREE.Mesh(
+    new THREE.PlaneGeometry(COURT_LENGTH, lineWidth),
+    lineMaterial
+  );
+  bottomLine.position.set(0, COURT_HEIGHT/2 + 0.03, -COURT_WIDTH/2);
+  bottomLine.rotation.x = -Math.PI / 2;
+  scene.add(bottomLine);
+
+  // Left
+  const leftLine = new THREE.Mesh(
+    new THREE.PlaneGeometry(lineWidth, COURT_WIDTH),
+    lineMaterial
+  );
+  leftLine.position.set(-COURT_LENGTH/2, COURT_HEIGHT/2 + 0.03, 0);
+  leftLine.rotation.x = -Math.PI / 2;
+  scene.add(leftLine);
+
+  // Right
+  const rightLine = new THREE.Mesh(
+    new THREE.PlaneGeometry(lineWidth, COURT_WIDTH),
+    lineMaterial
+  );
+  rightLine.position.set(COURT_LENGTH/2, COURT_HEIGHT/2 + 0.03, 0);
+  rightLine.rotation.x = -Math.PI / 2;
+  scene.add(rightLine);
+
+  // Center circle (as a thin ring/torus)
   const centerCircleRadius = 1.83;
-  const centerCircleSegments = 32;
-  const centerCirclePoints = [];
-  for (let i = 0; i <= centerCircleSegments; i++) {
-    const theta = (i / centerCircleSegments) * Math.PI * 2;
-    centerCirclePoints.push(new THREE.Vector3(
-      Math.cos(theta) * centerCircleRadius,
-      COURT_HEIGHT/2 + LINE_OFFSET,
-      Math.sin(theta) * centerCircleRadius
-    ));
-  }
-  const centerCircleGeometry = new THREE.BufferGeometry().setFromPoints(centerCirclePoints);
-  scene.add(new THREE.Line(centerCircleGeometry, lineMaterial));
+  const centerCircleThickness = 0.03; // Adjust for desired thickness
+  const centerCircleGeometry = new THREE.TorusGeometry(centerCircleRadius, centerCircleThickness, 16, 64);
+  const centerCircle = new THREE.Mesh(centerCircleGeometry, lineMaterial);
+  centerCircle.position.set(0, COURT_HEIGHT/2 + 0.016, 0);
+  centerCircle.rotation.x = Math.PI / 2;
+  scene.add(centerCircle);
 }
 
 function addThreePointLines(scene) {
