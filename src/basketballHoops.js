@@ -88,13 +88,21 @@ function createRimBracket(backboard) {
   // Orange metal material for brackets (similar to rim color)
   const bracketMaterial = new THREE.MeshPhongMaterial({ color: 0xff8c00, shininess: 60 });
   
-  // Create horizontal support connecting rim to backboard
+  // Adjust the bracket dimensions to make it shorter
+  const rimOffset = 0.01;  // Reduced from 0.1
+  const bracketLength = RIM_RADIUS + rimOffset;
+  
+  // Keep the bracket thin and narrow
+  const bracketHeight = 0.02;
+  const bracketWidth = 0.253;
+  
+  // Create shorter horizontal support connecting rim to backboard
   const horizontalSupport = new THREE.Mesh(
-    new THREE.BoxGeometry(RIM_RADIUS, 0.03, 0.35),
+    new THREE.BoxGeometry(bracketLength, bracketHeight, bracketWidth),
     bracketMaterial
   );
   horizontalSupport.position.set(
-    backboard.position.x + BACKBOARD_THICKNESS/2 + RIM_RADIUS/2,
+    backboard.position.x + BACKBOARD_THICKNESS/2 + bracketLength/2,
     RIM_HEIGHT_ABOVE_GROUND,
     0
   );
@@ -171,8 +179,11 @@ function createRim() {
     new THREE.TorusGeometry(RIM_RADIUS, RIM_TUBE_RADIUS, 16, RIM_SEGMENTS),
     new THREE.MeshPhongMaterial({ color: 0xff8c00, shininess: 60 })
   );
+  
+  // Reduce the rim offset to make it closer to backboard
+  const rimOffset = 0.2;  // Reduced from 0.1
   mesh.position.set(
-    BACKBOARD_THICKNESS + RIM_RADIUS,
+    BACKBOARD_THICKNESS + RIM_RADIUS + rimOffset,
     RIM_HEIGHT_ABOVE_GROUND,
     0
   );
