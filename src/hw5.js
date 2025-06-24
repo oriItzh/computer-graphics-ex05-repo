@@ -25,8 +25,26 @@ scene.add(ambientLight);
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
 directionalLight.position.set(10, 20, 15);
 scene.add(directionalLight);
+
+// Enhanced shadow settings
 renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Better-looking soft shadows
+
+// Configure directional light for shadows
 directionalLight.castShadow = true;
+// Larger shadow map for better quality
+directionalLight.shadow.mapSize.width = 2048;
+directionalLight.shadow.mapSize.height = 2048;
+// Adjust shadow camera frustum to cover the court properly
+directionalLight.shadow.camera.near = 0.5;
+directionalLight.shadow.camera.far = 50;
+directionalLight.shadow.camera.left = -20;
+directionalLight.shadow.camera.right = 20;
+directionalLight.shadow.camera.top = 20;
+directionalLight.shadow.camera.bottom = -20;
+// Optional: Uncomment to see the shadow camera frustum
+// const helper = new THREE.CameraHelper(directionalLight.shadow.camera);
+// scene.add(helper);
 
 // Light state tracking
 let isMainLightOn = true;

@@ -1,4 +1,5 @@
 import { createNbaLogoTexture } from "./textures/nbaLogo.js";
+
 const RIM_RADIUS = 0.225;
 const RIM_TUBE_RADIUS = 0.02;
 const RIM_HEIGHT_ABOVE_GROUND = 3.05;
@@ -17,15 +18,25 @@ const NET_MIDDLE_Y = RIM_HEIGHT_ABOVE_GROUND - NET_HEIGHT * 0.4;
 
 const POLE_RADIUS = 0.1;
 const POLE_HEIGHT = 4;
-const POLE_TO_BACKBOARD_X = 1.2; // Distance from backboard to pole (arm length)
+const POLE_TO_BACKBOARD_X = 1.2;
 const ARM_LENGTH = POLE_TO_BACKBOARD_X;
 const ARM_HEIGHT = 0.1;
 const ARM_DEPTH = 0.1;
 
 const SHOOTER_SQUARE_WIDTH = BACKBOARD_WIDTH / 2.5;
 const SHOOTER_SQUARE_HEIGHT = BACKBOARD_HEIGHT / 2.5;
-const SHOOTER_SQUARE_ABOVE_RIM = 0.05; // vertical distance above rim
-const SHOOTER_SQUARE_FRONT = 0.01; // just in front of backboard
+const SHOOTER_SQUARE_ABOVE_RIM = 0.05;
+const SHOOTER_SQUARE_FRONT = 0.01;
+
+// Helper to set shadow properties recursively
+function setShadowRecursively(object, cast = true, receive = true) {
+  object.traverse(child => {
+    if (child.isMesh) {
+      child.castShadow = cast;
+      child.receiveShadow = receive;
+    }
+  });
+}
 
 export function createBasketballHoops(scene, COURT_LENGTH) {
   const courtHalfLength = COURT_LENGTH / 2;
@@ -39,30 +50,63 @@ function createBasketballHoop(scene, hoopX, rotationY) {
   hoopGroup.rotation.y = rotationY;
 
   const backboard = createBackboard();
+  setShadowRecursively(backboard);
   hoopGroup.add(backboard);
 
   const rim = createRim();
+  setShadowRecursively(rim);
   hoopGroup.add(rim);
 
+  // Add the rim brackets that connect to the backboard (like in your reference image)
+  const rimBracket = createRimBracket(backboard);
+  setShadowRecursively(rimBracket);
+  hoopGroup.add(rimBracket);
+
   const net = createNet(rim);
+  net.forEach(line => setShadowRecursively(line, false, false));
   hoopGroup.add(...net);
 
   const pole = createPole(backboard);
+  setShadowRecursively(pole);
   hoopGroup.add(pole);
 
   const arm = createArm(backboard);
+  setShadowRecursively(arm);
   hoopGroup.add(arm);
 
   const shooterSquare = createShootersSquare(backboard);
+  setShadowRecursively(shooterSquare);
   hoopGroup.add(shooterSquare);
 
+  setShadowRecursively(hoopGroup);
   scene.add(hoopGroup);
 }
 
+function createRimBracket(backboard) {
+  const bracketGroup = new THREE.Group();
+  
+  // Orange metal material for brackets (similar to rim color)
+  const bracketMaterial = new THREE.MeshPhongMaterial({ color: 0xff8c00, shininess: 60 });
+  
+  // Create horizontal support connecting rim to backboard
+  const horizontalSupport = new THREE.Mesh(
+    new THREE.BoxGeometry(RIM_RADIUS, 0.03, 0.35),
+    bracketMaterial
+  );
+  horizontalSupport.position.set(
+    backboard.position.x + BACKBOARD_THICKNESS/2 + RIM_RADIUS/2,
+    RIM_HEIGHT_ABOVE_GROUND,
+    0
+  );
+  
+  bracketGroup.add(horizontalSupport);
+  return bracketGroup;
+}
+
 function createBackboardFrame(backboardMesh) {
-  const FRAME_THICKNESS = 0.07; // thicker frame
-  const FRAME_DEPTH = BACKBOARD_THICKNESS + 0.02; // slightly deeper than the backboard
-  const frameMaterial = new THREE.MeshPhongMaterial({ color: 0x333333, metalness: 0.8, shininess: 80 }); // darker and more metallic
+  const FRAME_THICKNESS = 0.07;
+  const FRAME_DEPTH = BACKBOARD_THICKNESS + 0.02;
+  const frameMaterial = new THREE.MeshPhongMaterial({ color: 0x333333, metalness: 0.8, shininess: 80 });
 
   // Top frame
   const topFrame = new THREE.Mesh(
@@ -97,14 +141,12 @@ function createBackboardFrame(backboardMesh) {
   backboardMesh.add(rightFrame);
 }
 
-function createBackboard() { 
-  // Use your own values for BACKBOARD_WIDTH and BACKBOARD_HEIGHT (in meters)
-  const texture = createBackboardTexture(BACKBOARD_WIDTH, BACKBOARD_HEIGHT, Math.floor(0.25 * 200)); // NBA logo ~25% of board height
-
+function createBackboard() {
+  const texture = createBackboardTexture(BACKBOARD_WIDTH, BACKBOARD_HEIGHT, Math.floor(0.25 * 200));
   const material = new THREE.MeshPhongMaterial({
     map: texture,
     transparent: true,
-    opacity: 1 // Canvas already simulates opacity
+    opacity: 1
   });
 
   const mesh = new THREE.Mesh(
@@ -117,8 +159,8 @@ function createBackboard() {
     0
   );
   mesh.castShadow = true;
+  mesh.receiveShadow = true;
 
-  // Add metal frame using helper
   createBackboardFrame(mesh);
 
   return mesh;
@@ -127,7 +169,7 @@ function createBackboard() {
 function createRim() {
   const mesh = new THREE.Mesh(
     new THREE.TorusGeometry(RIM_RADIUS, RIM_TUBE_RADIUS, 16, RIM_SEGMENTS),
-    new THREE.MeshPhongMaterial({ color: 0xff8c00 })
+    new THREE.MeshPhongMaterial({ color: 0xff8c00, shininess: 60 })
   );
   mesh.position.set(
     BACKBOARD_THICKNESS + RIM_RADIUS,
@@ -136,27 +178,22 @@ function createRim() {
   );
   mesh.rotation.x = Math.PI / 2;
   mesh.castShadow = true;
+  mesh.receiveShadow = true;
   return mesh;
 }
 
-// You must already have createNbaLogoTexture imported!
-
 function createBackboardTexture(width, height, nbaLogoSizePx = 96) {
-  // Make the canvas the same size as the backboard (for max fidelity)
   const canvas = document.createElement('canvas');
-  canvas.width = Math.ceil(width * 200);   // for sharpness, 200 px per meter
+  canvas.width = Math.ceil(width * 200);
   canvas.height = Math.ceil(height * 200);
   const ctx = canvas.getContext('2d');
 
-  // Draw white background, partial opacity (simulate 0.8 opacity)
   ctx.globalAlpha = 0.8;
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.globalAlpha = 1.0;
 
-  // Draw NBA logo in top-left corner (with some margin)
   const nbaLogoTexture = createNbaLogoTexture(nbaLogoSizePx);
-  // We need to extract the image from the THREE.Texture:
   const logoImage = nbaLogoTexture.image;
   const margin = Math.floor(canvas.width * 0.03);
   ctx.drawImage(
@@ -164,16 +201,14 @@ function createBackboardTexture(width, height, nbaLogoSizePx = 96) {
     margin,
     margin,
     nbaLogoSizePx,
-    nbaLogoSizePx * 2.22 // maintain logo aspect ratio
+    nbaLogoSizePx * 2.22
   );
 
-  // Return as THREE.js texture
   const texture = new THREE.CanvasTexture(canvas);
   texture.anisotropy = 16;
   texture.needsUpdate = true;
   return texture;
 }
-
 
 function createNet(rim) {
   const netMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
@@ -181,25 +216,18 @@ function createNet(rim) {
   const netSegments = NET_SEGMENTS;
   const netPoints = [];
 
-  // Create points for the rim, middle, and bottom sections
   for (let i = 0; i <= netSegments; i++) {
     const angle = (i / netSegments) * Math.PI * 2;
-    
-    // Rim points
     netPoints.push(new THREE.Vector3(
       rim.position.x + Math.cos(angle) * RIM_RADIUS,
       rim.position.y,
       rim.position.z + Math.sin(angle) * RIM_RADIUS
     ));
-    
-    // Middle points
     netPoints.push(new THREE.Vector3(
       rim.position.x + Math.cos(angle) * NET_MIDDLE_RADIUS,
       NET_MIDDLE_Y,
       rim.position.z + Math.sin(angle) * NET_MIDDLE_RADIUS
     ));
-    
-    // Bottom points
     netPoints.push(new THREE.Vector3(
       rim.position.x + Math.cos(angle) * NET_BOTTOM_RADIUS,
       netBottomY,
@@ -208,47 +236,33 @@ function createNet(rim) {
   }
 
   const netLines = [];
-  
-  // Create vertical lines
   for (let i = 0; i < netSegments; i++) {
     const baseIndex = i * 3;
-    // Rim to middle
     netLines.push(new THREE.Line(
       new THREE.BufferGeometry().setFromPoints([netPoints[baseIndex], netPoints[baseIndex + 1]]),
       netMaterial
     ));
-    // Middle to bottom
     netLines.push(new THREE.Line(
       new THREE.BufferGeometry().setFromPoints([netPoints[baseIndex + 1], netPoints[baseIndex + 2]]),
       netMaterial
     ));
   }
-
-  // Create diagonal lines
   for (let i = 0; i < netSegments; i++) {
     const baseIndex = i * 3;
     const nextBaseIndex = ((i + 1) % netSegments) * 3;
-    
-    // Rim to middle diagonal
     netLines.push(new THREE.Line(
       new THREE.BufferGeometry().setFromPoints([netPoints[baseIndex], netPoints[nextBaseIndex + 1]]),
       netMaterial
     ));
-    
-    // Middle to bottom diagonal
     netLines.push(new THREE.Line(
       new THREE.BufferGeometry().setFromPoints([netPoints[baseIndex + 1], netPoints[nextBaseIndex + 2]]),
       netMaterial
     ));
-    
-    // Cross diagonals in middle section
     netLines.push(new THREE.Line(
       new THREE.BufferGeometry().setFromPoints([netPoints[baseIndex + 1], netPoints[nextBaseIndex + 1]]),
       netMaterial
     ));
   }
-
-  // Create circles at each level
   for (let level = 0; level < 3; level++) {
     const circlePoints = [];
     for (let i = 0; i <= netSegments; i++) {
@@ -259,61 +273,110 @@ function createNet(rim) {
       netMaterial
     ));
   }
-
   return netLines;
 }
 
 function createPole(backboard) {
-  // Create the support pole for the backboard
-  const mesh = new THREE.Mesh(
+  // Main pole
+  const mainPole = new THREE.Mesh(
     new THREE.CylinderGeometry(POLE_RADIUS, POLE_RADIUS, POLE_HEIGHT, 8),
-    new THREE.MeshPhongMaterial({ color: 0x808080 })
+    new THREE.MeshPhongMaterial({ color: 0x808080, shininess: 10 })
   );
-  
-  // Position pole relative to backboard
-  mesh.position.set(
+  mainPole.position.set(
     backboard.position.x - POLE_TO_BACKBOARD_X,
     POLE_HEIGHT / 2,
     0
   );
-  mesh.castShadow = true;
-  return mesh;
+  mainPole.castShadow = true;
+  mainPole.receiveShadow = true;
+  
+  return mainPole;  // Keep it simple, the arm connection will be handled in createArm
 }
 
 function createArm(backboard) {
-  const mesh = new THREE.Mesh(
+  const armGroup = new THREE.Group();
+  
+  // Main horizontal arm connecting pole to backboard
+  const mainArm = new THREE.Mesh(
     new THREE.BoxGeometry(ARM_LENGTH, ARM_HEIGHT, ARM_DEPTH),
-    new THREE.MeshPhongMaterial({ color: 0x808080 })
+    new THREE.MeshPhongMaterial({ color: 0x808080, shininess: 10 })
   );
-  mesh.position.set(
+  mainArm.position.set(
     backboard.position.x - (POLE_TO_BACKBOARD_X / 2),
     backboard.position.y,
     0
   );
-  mesh.castShadow = true;
-  return mesh;
+  
+  // Create a connection piece between arm and backboard
+  const backboardConnector = new THREE.Mesh(
+    new THREE.BoxGeometry(ARM_HEIGHT, ARM_HEIGHT*2, ARM_DEPTH*1.5),
+    new THREE.MeshPhongMaterial({ color: 0x707070, shininess: 10 })
+  );
+  backboardConnector.position.set(
+    backboard.position.x - ARM_HEIGHT/2,
+    backboard.position.y,
+    0
+  );
+  
+  // Create a connection piece between arm and pole
+  const poleConnector = new THREE.Mesh(
+    new THREE.BoxGeometry(ARM_HEIGHT, ARM_HEIGHT*2, ARM_DEPTH*1.5),
+    new THREE.MeshPhongMaterial({ color: 0x707070, shininess: 10 })
+  );
+  poleConnector.position.set(
+    backboard.position.x - POLE_TO_BACKBOARD_X + ARM_HEIGHT/2,
+    backboard.position.y,
+    0
+  );
+  
+  armGroup.add(mainArm, backboardConnector, poleConnector);
+  armGroup.castShadow = true;
+  armGroup.receiveShadow = true;
+  return armGroup;
 }
 
+// Shooter's square as four thin planes (not lines)
 function createShootersSquare(backboard) {
-  const squarePoints = [
-    new THREE.Vector3(-SHOOTER_SQUARE_WIDTH/2,  SHOOTER_SQUARE_HEIGHT/2, 0),
-    new THREE.Vector3( SHOOTER_SQUARE_WIDTH/2,  SHOOTER_SQUARE_HEIGHT/2, 0),
-    new THREE.Vector3( SHOOTER_SQUARE_WIDTH/2,  SHOOTER_SQUARE_HEIGHT/2, 0),
-    new THREE.Vector3( SHOOTER_SQUARE_WIDTH/2, -SHOOTER_SQUARE_HEIGHT/2, 0),
-    new THREE.Vector3( SHOOTER_SQUARE_WIDTH/2, -SHOOTER_SQUARE_HEIGHT/2, 0),
-    new THREE.Vector3(-SHOOTER_SQUARE_WIDTH/2, -SHOOTER_SQUARE_HEIGHT/2, 0),
-    new THREE.Vector3(-SHOOTER_SQUARE_WIDTH/2, -SHOOTER_SQUARE_HEIGHT/2, 0),
-    new THREE.Vector3(-SHOOTER_SQUARE_WIDTH/2,  SHOOTER_SQUARE_HEIGHT/2, 0)
-  ];
-  const mesh = new THREE.LineSegments(
-    new THREE.BufferGeometry().setFromPoints(squarePoints),
-    new THREE.LineBasicMaterial({ color: 0xffffff })
+  const squareThickness = 0.01;
+  const squareMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+
+  // Top edge
+  const topEdge = new THREE.Mesh(
+    new THREE.PlaneGeometry(SHOOTER_SQUARE_WIDTH, squareThickness),
+    squareMaterial
   );
-  mesh.position.set(
-    backboard.position.x + (BACKBOARD_THICKNESS/2) + SHOOTER_SQUARE_FRONT,
+  topEdge.position.set(0, SHOOTER_SQUARE_HEIGHT / 2, 0.01);
+
+  // Bottom edge
+  const bottomEdge = new THREE.Mesh(
+    new THREE.PlaneGeometry(SHOOTER_SQUARE_WIDTH, squareThickness),
+    squareMaterial
+  );
+  bottomEdge.position.set(0, -SHOOTER_SQUARE_HEIGHT / 2, 0.01);
+
+  // Left edge
+  const leftEdge = new THREE.Mesh(
+    new THREE.PlaneGeometry(squareThickness, SHOOTER_SQUARE_HEIGHT),
+    squareMaterial
+  );
+  leftEdge.position.set(-SHOOTER_SQUARE_WIDTH / 2, 0, 0.01);
+
+  // Right edge
+  const rightEdge = new THREE.Mesh(
+    new THREE.PlaneGeometry(squareThickness, SHOOTER_SQUARE_HEIGHT),
+    squareMaterial
+  );
+  rightEdge.position.set(SHOOTER_SQUARE_WIDTH / 2, 0, 0.01);
+
+  const shooterSquareGroup = new THREE.Group();
+  shooterSquareGroup.add(topEdge, bottomEdge, leftEdge, rightEdge);
+
+  shooterSquareGroup.position.set(
+    backboard.position.x + (BACKBOARD_THICKNESS / 2) + SHOOTER_SQUARE_FRONT,
     RIM_HEIGHT_ABOVE_GROUND + (SHOOTER_SQUARE_HEIGHT / 2) + SHOOTER_SQUARE_ABOVE_RIM,
     0
   );
-  mesh.rotation.y = Math.PI / 2;
-  return mesh;
+  shooterSquareGroup.rotation.y = Math.PI / 2;
+
+  return shooterSquareGroup;
 }
