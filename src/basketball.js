@@ -10,8 +10,8 @@ export function createBasketball(scene) {
   const ballGeometry = new THREE.SphereGeometry(BALL_RADIUS, 48, 48);
   const ballMaterial = new THREE.MeshPhongMaterial({
     map: createBasketballTexture(1024),
-    shininess: 5,
-    specular: 0x222222
+    shininess: 9,
+    specular: new THREE.Color(0x333333)
   });
   
   const ball = new THREE.Mesh(ballGeometry, ballMaterial);

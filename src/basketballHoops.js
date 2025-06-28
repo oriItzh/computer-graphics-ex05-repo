@@ -348,8 +348,8 @@ function createArm(backboard) {
 
 // Shooter's square as four thin planes (not lines)
 function createShootersSquare(backboard) {
-  const squareThickness = 0.01;
-  const squareMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+  const squareThickness = 0.05; // Make this a small value for a thin frame
+  const squareMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
 
   // Top edge
   const topEdge = new THREE.Mesh(
@@ -365,19 +365,33 @@ function createShootersSquare(backboard) {
   );
   bottomEdge.position.set(0, -SHOOTER_SQUARE_HEIGHT / 2, 0.01);
 
-  // Left edge
+  // Left edge (shortened so it fits between top and bottom)
   const leftEdge = new THREE.Mesh(
-    new THREE.PlaneGeometry(squareThickness, SHOOTER_SQUARE_HEIGHT),
+    new THREE.PlaneGeometry(
+      squareThickness,
+      SHOOTER_SQUARE_HEIGHT - squareThickness // subtract thickness so it fits inside
+    ),
     squareMaterial
   );
-  leftEdge.position.set(-SHOOTER_SQUARE_WIDTH / 2, 0, 0.01);
+  leftEdge.position.set(
+    -SHOOTER_SQUARE_WIDTH / 2 + squareThickness/2,
+    0, // centered between top and bottom
+    0.01
+  );
 
-  // Right edge
+  // Right edge (shortened so it fits between top and bottom)
   const rightEdge = new THREE.Mesh(
-    new THREE.PlaneGeometry(squareThickness, SHOOTER_SQUARE_HEIGHT),
+    new THREE.PlaneGeometry(
+      squareThickness,
+      SHOOTER_SQUARE_HEIGHT - squareThickness // subtract thickness so it fits inside
+    ),
     squareMaterial
   );
-  rightEdge.position.set(SHOOTER_SQUARE_WIDTH / 2, 0, 0.01);
+  rightEdge.position.set(
+    SHOOTER_SQUARE_WIDTH / 2 - squareThickness/2,
+    0, // centered between top and bottom
+    0.01
+  );
 
   const shooterSquareGroup = new THREE.Group();
   shooterSquareGroup.add(topEdge, bottomEdge, leftEdge, rightEdge);
