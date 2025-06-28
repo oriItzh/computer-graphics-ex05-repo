@@ -33,7 +33,7 @@ A detailed 3D basketball court scene built with Three.js, featuring realistic li
   - Court lighting fixtures
   ![All court view](screenshots/all_court_view_with_controls.png)
   - Stadium seating
-  ![Stadium] (screenshots/with_shadows.png)
+  ![Stadium](screenshots/with_shadows.png)
   - Scoreboards
   ![Score Boards](screenshots/Scoreboard_view.png)
 
