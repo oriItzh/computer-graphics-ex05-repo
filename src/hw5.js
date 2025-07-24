@@ -100,34 +100,6 @@ function getShotInitialVelocity(ballPos, targetHoop, powerPercent) {
   return new THREE.Vector3(vx, vy, vz);
 }
 
-// --- Scoring sphere for rim detection ---
-const SCORING_SPHERE_RADIUS = RIM_RADIUS - BALL_RADIUS * 0.2; // slightly smaller than rim
-const leftScoringSphere = {
-  center: new THREE.Vector3(-COURT_LENGTH/2 + BACKBOARD_THICKNESS + RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0),
-  radius: SCORING_SPHERE_RADIUS
-};
-const rightScoringSphere = {
-  center: new THREE.Vector3(COURT_LENGTH/2 - BACKBOARD_THICKNESS - RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0),
-  radius: SCORING_SPHERE_RADIUS
-};
-
-function getScoringSphere(ballPos) {
-  // Returns the scoring sphere for the current half-court
-  return (ballPos.x < 0) ? leftScoringSphere : rightScoringSphere;
-}
-
-function isBallThroughHoop(ballPos, prevBallPos, scoringSphere) {
-  // Ball must pass from above to below the scoring sphere, intersecting it, and be moving downward
-  const wasAbove = prevBallPos.y > scoringSphere.center.y;
-  const isBelow = ballPos.y <= scoringSphere.center.y;
-  const distNow = ballPos.distanceTo(scoringSphere.center);
-  const distPrev = prevBallPos.distanceTo(scoringSphere.center);
-  const intersectsNow = distNow < (scoringSphere.radius + BALL_RADIUS);
-  const intersectsPrev = distPrev > (scoringSphere.radius + BALL_RADIUS);
-  const movingDown = (ballPos.y - prevBallPos.y) < 0;
-  return wasAbove && isBelow && intersectsNow && intersectsPrev && movingDown;
-}
-
 // --- Scoring and statistics state ---
 let score = 0;
 let attempts = 0;
@@ -156,6 +128,18 @@ function setStatusMessage(msg, color = '#FFD700') {
 
 function clearStatusMessage() {
   setStatusMessage('');
+}
+
+// --- Rim/hoop collision detection ---
+function isBallThroughHoop(ballPos, prevBallPos, hoopPos) {
+  // Ball must pass from above to below rim height, within rim radius in XZ, and be moving downward
+  const wasAbove = prevBallPos.y > RIM_HEIGHT_ABOVE_GROUND;
+  const isBelow = ballPos.y <= RIM_HEIGHT_ABOVE_GROUND;
+  const distXZ = Math.sqrt((ballPos.x - hoopPos.x)**2 + (ballPos.z - hoopPos.z)**2);
+  // Allow for ball radius margin
+  const withinRim = distXZ < (RIM_RADIUS - BALL_RADIUS * 0.5);
+  const movingDown = (ballPos.y - prevBallPos.y) < 0;
+  return wasAbove && isBelow && withinRim && movingDown;
 }
 
 // --- Ball rotation state ---
@@ -381,8 +365,8 @@ function animate() {
     // Ball rotation
     updateBallRotation(ballVelocity, delta);
     // Rim/hoop collision detection (scoring)
-    let scoringSphere = getScoringSphere(basketball.position);
-    if (!shotInProgress && isBallThroughHoop(basketball.position, prevBallPos, scoringSphere)) {
+    let hoopPos = getNearestHoop(basketball.position);
+    if (!shotInProgress && isBallThroughHoop(basketball.position, prevBallPos, hoopPos)) {
       score += 2;
       shotsMade++;
       lastShotMade = true;
