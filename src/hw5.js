@@ -7,7 +7,7 @@ import { createStadiumStands } from './seats.js';
 import { createCourtLighting } from './courtLights.js';
 import { drawScoreboards } from './scoreboard.js';
 import { createMovementState, handleMovementKey, updateBasketballPosition, getCourtBoundaries } from './physics-hw06/basketballMovement.js';
-import { RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, getHoopRimPositions, getRimColliderPositions } from './basketballHoops.js';
+import { RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, BACKBOARD_THICKNESS, getHoopRimPositions, getRimColliderPositions } from './basketballHoops.js';
 
 // Scene setup
 const scene = new THREE.Scene();
@@ -67,8 +67,8 @@ const BALL_RADIUS = 0.12; // must match basketball.js
 const BALL_GROUND_OFFSET = 0.15; // must match basketball.js
 
 // Hoop positions (NBA standard, see basketballHoops.js)
-const leftHoop = new THREE.Vector3(-COURT_LENGTH/2, 3.05, 0);
-const rightHoop = new THREE.Vector3(COURT_LENGTH/2, 3.05, 0);
+const leftHoop = new THREE.Vector3(-COURT_LENGTH/2 + BACKBOARD_THICKNESS + RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
+const rightHoop = new THREE.Vector3(COURT_LENGTH/2 - BACKBOARD_THICKNESS - RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
 
 function getNearestHoop(pos) {
   // Returns the position of the hoop on the same half-court as the ball
@@ -130,21 +130,40 @@ function clearStatusMessage() {
   setStatusMessage('');
 }
 
-// --- Rim/hoop collision detection ---
+// --- Rim/hoop collision detection using circular plane intersection ---
 function isBallThroughHoop(ballPos, prevBallPos, hoopPos) {
-  // Ball must pass from above to below the rim plane (y = rim height),
-  // and the center must be within the rim's XZ circle (allowing for ball radius margin)
+  // Define the circular plane at rim height
   const rimY = RIM_HEIGHT_ABOVE_GROUND;
+  const rimCenter = new THREE.Vector3(hoopPos.x, rimY, hoopPos.z);
+  const planeNormal = new THREE.Vector3(0, 1, 0); // pointing up
+  
+  // Check if ball crossed the plane from above to below
   const wasAbove = prevBallPos.y > rimY;
   const isBelow = ballPos.y <= rimY;
-  // Project ball position onto XZ plane and check distance to rim center
-  const dx = ballPos.x - hoopPos.x;
-  const dz = ballPos.z - hoopPos.z;
-  const distXZ = Math.sqrt(dx*dx + dz*dz);
-  // Allow for ball radius margin (so the whole ball can fit through)
-  const withinRim = distXZ < (RIM_RADIUS - BALL_RADIUS * 0.1);
-  // Only count if the ball's center crosses from above to below the rim plane and is within the rim
-  return wasAbove && isBelow && withinRim;
+  
+  if (!wasAbove || !isBelow) {
+    return false; // Ball didn't cross the plane from above
+  }
+  
+  // Find the intersection point where the ball trajectory crosses the rim plane
+  const trajectory = new THREE.Vector3().subVectors(ballPos, prevBallPos);
+  const t = (rimY - prevBallPos.y) / trajectory.y;
+  
+  // Calculate the exact intersection point on the rim plane
+  const intersectionPoint = new THREE.Vector3().addVectors(
+    prevBallPos,
+    trajectory.multiplyScalar(t)
+  );
+  
+  // Check if the intersection point is within the circular rim
+  const distanceFromRimCenter = new THREE.Vector2(
+    intersectionPoint.x - rimCenter.x,
+    intersectionPoint.z - rimCenter.z
+  ).length();
+  
+  // Ball scores if it passes through the circular opening (accounting for ball radius)
+  const effectiveRimRadius = RIM_RADIUS - BALL_RADIUS * 0.8; // Slightly tighter tolerance
+  return distanceFromRimCenter <= effectiveRimRadius;
 }
 
 // --- Ball rotation state ---
@@ -242,9 +261,34 @@ function addRimCollidersDebug(scene, colliders, color) {
     scene.add(mesh);
   }
 }
-// Uncomment to visualize:
+
+// --- DEBUG: Visualize scoring circular planes ---
+// function addScoringPlanesDebug(scene, COURT_LENGTH) {
+//   const planeGeometry = new THREE.CircleGeometry(RIM_RADIUS - BALL_RADIUS * 0.8, 32);
+//   const planeMaterial = new THREE.MeshBasicMaterial({ 
+//     color: 0x00ff00, 
+//     transparent: true, 
+//     opacity: 0.3,
+//     side: THREE.DoubleSide
+//   });
+  
+//   // Left hoop scoring plane
+//   const leftPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+//   leftPlane.position.set(-COURT_LENGTH/2 + BACKBOARD_THICKNESS + RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
+//   leftPlane.rotation.x = Math.PI / 2; // Make it horizontal
+//   scene.add(leftPlane);
+  
+//   // Right hoop scoring plane
+//   const rightPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+//   rightPlane.position.set(COURT_LENGTH/2 - BACKBOARD_THICKNESS - RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
+//   rightPlane.rotation.x = Math.PI / 2; // Make it horizontal
+//   scene.add(rightPlane);
+// }
+
+// // Uncomment to visualize:
 // addRimCollidersDebug(scene, rimColliders.left, 0xff0000);
 // addRimCollidersDebug(scene, rimColliders.right, 0x0000ff);
+// addScoringPlanesDebug(scene, COURT_LENGTH);
 
 function getActiveRimColliders(ballPos) {
   return (ballPos.x < 0) ? rimColliders.left : rimColliders.right;
