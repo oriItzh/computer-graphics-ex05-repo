@@ -12,6 +12,11 @@ const RIM_TO_BACKBOARD_X = BACKBOARD_THICKNESS + RIM_RADIUS;
 const LINE_OFFSET = 0.04;
 const COURT_SHININESS = 0.2;
 
+// Export constants for 3-point line calculations
+export const THREE_POINT_ARC_RADIUS = 7.24;
+export const THREE_POINT_SIDE_Z = COURT_WIDTH / 2 - 0.91;
+export { COURT_LENGTH, COURT_WIDTH };
+
 // Global line material with increased width
 const LINE_WIDTH = 2;
 const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: LINE_WIDTH });
@@ -236,4 +241,48 @@ function addRestrictedAreas(scene) {
     ));
   }
   scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightRestrictedAreaPoints), lineMaterial));
+}
+
+// Function to check if a shot position is beyond the 3-point line
+export function isThreePointShot(ballPos, hoopPos) {
+  const courtHalfLength = COURT_LENGTH / 2;
+  const X_OFFSET = 1;
+  
+  // Determine which hoop we're shooting at
+  const isLeftHoop = hoopPos.x < 0;
+  
+  // Calculate the basket center for the respective hoop
+  let basketCenterX;
+  if (isLeftHoop) {
+    const leftHoopX = -courtHalfLength;
+    basketCenterX = leftHoopX + RIM_TO_BACKBOARD_X + X_OFFSET;
+  } else {
+    const rightHoopX = courtHalfLength;
+    basketCenterX = rightHoopX - RIM_TO_BACKBOARD_X - X_OFFSET;
+  }
+  
+  // Calculate distance from ball to basket center (in XZ plane only)
+  const dx = ballPos.x - basketCenterX;
+  const dz = ballPos.z - 0; // basket is at z=0
+  const distanceToBasket = Math.sqrt(dx * dx + dz * dz);
+  
+  // Check if the ball is beyond the 3-point arc
+  // For side areas, check if Z coordinate is beyond the straight line portion
+  const absZ = Math.abs(ballPos.z);
+  
+  if (absZ > THREE_POINT_SIDE_Z) {
+    // In the straight line section - check if X distance is sufficient
+    const threePointXOffsetFromBasket = Math.sqrt(
+      THREE_POINT_ARC_RADIUS * THREE_POINT_ARC_RADIUS - THREE_POINT_SIDE_Z * THREE_POINT_SIDE_Z
+    );
+    
+    if (isLeftHoop) {
+      return ballPos.x < (basketCenterX + threePointXOffsetFromBasket);
+    } else {
+      return ballPos.x > (basketCenterX - threePointXOffsetFromBasket);
+    }
+  } else {
+    // In the arc section - check distance from basket center
+    return distanceToBasket > THREE_POINT_ARC_RADIUS;
+  }
 }

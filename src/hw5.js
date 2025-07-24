@@ -1,5 +1,5 @@
 import { OrbitControls } from './OrbitControls.js'; // OrbitControls.js is a custom implementation of the OrbitControls class 
-import { createBasketballCourt } from './basketballCourt.js';
+import { createBasketballCourt, isThreePointShot } from './basketballCourt.js';
 import {  createBasketballHoops } from './basketballHoops.js';
 import { createBasketball } from './basketball.js';
 import { createUI } from './ui.js';
@@ -111,6 +111,7 @@ let attempts = 0;
 let shotsMade = 0;
 let lastShotMade = false;
 let shotInProgress = false;
+let shotStartPosition = null; // Track where the shot was taken from
 
 function updateScoreUI() {
   const scoreEl = document.getElementById('score');
@@ -121,6 +122,24 @@ function updateScoreUI() {
   if (attemptsEl) attemptsEl.textContent = `Attempts: ${attempts}`;
   if (madeEl) madeEl.textContent = `Shots Made: ${shotsMade}`;
   if (accuracyEl) accuracyEl.textContent = `Accuracy: ${attempts > 0 ? Math.round((shotsMade/attempts)*100) : 0}%`;
+}
+
+function updateShotZoneDisplay() {
+  const shotZoneEl = document.getElementById('shot-zone');
+  if (shotZoneEl && !inFlight) {
+    const targetHoop = getNearestHoop(basketball.position);
+    const isThreePoint = isThreePointShot(basketball.position, targetHoop);
+    
+    if (isThreePoint) {
+      shotZoneEl.textContent = "3-Point Zone";
+      shotZoneEl.style.backgroundColor = "#FF6B35";
+      shotZoneEl.style.color = "#FFFFFF";
+    } else {
+      shotZoneEl.textContent = "2-Point Zone";
+      shotZoneEl.style.backgroundColor = "#4CAF50";
+      shotZoneEl.style.color = "#FFFFFF";
+    }
+  }
 }
 
 function setStatusMessage(msg, color = '#FFD700') {
@@ -196,6 +215,7 @@ function resetBall() {
   horizontalAngle = 0;
   lastShotMade = false;
   shotInProgress = false;
+  shotStartPosition = null; // Reset shot start position
   updateShotPowerDisplay();
   updateAngleDisplays();
   updateScoreUI();
@@ -501,6 +521,7 @@ function setupEventListeners() {
       case ' ':
         // Spacebar: shoot if not in flight
         if (!inFlight) {
+          shotStartPosition = basketball.position.clone(); // Record where the shot was taken from
           const targetHoop = getNearestHoop(basketball.position);
           ballVelocity = getShotInitialVelocity(basketball.position, targetHoop, shotPower, verticalAngle, horizontalAngle);
           inFlight = true;
@@ -557,10 +578,16 @@ function animate() {
     // Rim/hoop collision detection (scoring)
     let hoopPos = getNearestHoop(basketball.position);
     if (!shotInProgress && isBallThroughHoop(basketball.position, prevBallPos, hoopPos)) {
-      score += 2;
+      // Determine points based on shot distance
+      let points = 2; // Default 2 points
+      if (shotStartPosition && isThreePointShot(shotStartPosition, hoopPos)) {
+        points = 3; // 3 points for shots beyond the 3-point line
+      }
+      
+      score += points;
       shotsMade++;
       lastShotMade = true;
-      setStatusMessage('SHOT MADE!', '#00FF00');
+      setStatusMessage(`${points}-POINT SHOT MADE!`, '#00FF00');
       updateScoreUI();
       shotInProgress = true;
     }
@@ -610,6 +637,7 @@ function animate() {
   updateShotPowerDisplay();
   updateAngleDisplays();
   updateScoreUI();
+  updateShotZoneDisplay(); // Update live zone indicator
   if (!inFlight) {
     const targetHoop = getNearestHoop(basketball.position);
     showTrajectory(basketball.position, targetHoop, shotPower, verticalAngle, horizontalAngle);
