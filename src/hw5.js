@@ -57,6 +57,55 @@ const SHOT_POWER_STEP = 2; // percent per key press
 const SHOT_POWER_MIN = 0;
 const SHOT_POWER_MAX = 100;
 
+// --- Shooting & Physics State (Phase 3) ---
+let ballVelocity = new THREE.Vector3(0, 0, 0);
+let inFlight = false;
+const GRAVITY = -9.8; // m/s^2
+const BOUNCE_RESTITUTION = 0.65; // energy loss on bounce
+const BALL_RADIUS = 0.12; // must match basketball.js
+const BALL_GROUND_OFFSET = 0.15; // must match basketball.js
+
+// Hoop positions (NBA standard, see basketballHoops.js)
+const leftHoop = new THREE.Vector3(-COURT_LENGTH/2, 3.05, 0);
+const rightHoop = new THREE.Vector3(COURT_LENGTH/2, 3.05, 0);
+
+function getNearestHoop(pos) {
+  // Returns the position of the nearest hoop
+  return (pos.x < 0) ? rightHoop : leftHoop;
+}
+
+function getShotInitialVelocity(ballPos, targetHoop, powerPercent) {
+  // Calculate initial velocity vector to reach the hoop with a nice arc
+  // We'll use a fixed arc angle (e.g., 50 deg) and scale speed by power
+  const ARC_ANGLE_DEG = 50;
+  const ARC_ANGLE_RAD = ARC_ANGLE_DEG * Math.PI / 180;
+  const g = -GRAVITY;
+  const dx = targetHoop.x - ballPos.x;
+  const dz = targetHoop.z - ballPos.z;
+  const dy = targetHoop.y - ballPos.y;
+  const distXZ = Math.sqrt(dx*dx + dz*dz);
+  // Power scales the initial speed (min 40%, max 100%)
+  const minSpeed = 6.5; // m/s (tunable)
+  const maxSpeed = 13.0; // m/s (tunable)
+  const speed = minSpeed + (maxSpeed - minSpeed) * (powerPercent / 100);
+  // Decompose speed into components
+  const vxz = speed * Math.cos(ARC_ANGLE_RAD);
+  const vy = speed * Math.sin(ARC_ANGLE_RAD);
+  // Direction in XZ
+  const dirXZ = new THREE.Vector3(dx, 0, dz).normalize();
+  const vx = dirXZ.x * vxz;
+  const vz = dirXZ.z * vxz;
+  return new THREE.Vector3(vx, vy, vz);
+}
+
+function resetBall() {
+  basketball.position.set(0, BALL_RADIUS + BALL_GROUND_OFFSET, 0);
+  ballVelocity.set(0, 0, 0);
+  inFlight = false;
+  shotPower = 50;
+  updateShotPowerDisplay();
+}
+
 function clampShotPower(val) {
   return Math.max(SHOT_POWER_MIN, Math.min(SHOT_POWER_MAX, val));
 }
@@ -196,12 +245,24 @@ function setupEventListeners() {
         shotPower = clampShotPower(shotPower - SHOT_POWER_STEP);
         updateShotPowerDisplay();
         break;
+      case ' ':
+        // Spacebar: shoot if not in flight
+        if (!inFlight) {
+          const targetHoop = getNearestHoop(basketball.position);
+          ballVelocity = getShotInitialVelocity(basketball.position, targetHoop, shotPower);
+          inFlight = true;
+        }
+        break;
+      case 'r':
+        resetBall();
+        break;
     }
   });
 
   // Keyboard controls for basketball movement
   function handleBasketballMovementKey(e, isDown) {
-    handleMovementKey(e, isDown, moveState);
+    // Only allow movement if not in flight
+    if (!inFlight) handleMovementKey(e, isDown, moveState);
   }
   document.addEventListener('keydown', (e) => handleBasketballMovementKey(e, true));
   document.addEventListener('keyup', (e) => handleBasketballMovementKey(e, false));
@@ -216,11 +277,38 @@ function animate() {
   controls.enabled = isOrbitEnabled;
   controls.update();
 
-  // Basketball movement logic (Phase 1)
   const now = performance.now();
   const delta = (now - lastTime) / 1000; // seconds
   lastTime = now;
-  updateBasketballPosition(basketball, moveState, delta, boundaries);
+
+  if (inFlight) {
+    // Physics update
+    ballVelocity.y += GRAVITY * delta;
+    basketball.position.x += ballVelocity.x * delta;
+    basketball.position.y += ballVelocity.y * delta;
+    basketball.position.z += ballVelocity.z * delta;
+    // Ground collision
+    const groundY = BALL_RADIUS + BALL_GROUND_OFFSET;
+    if (basketball.position.y <= groundY) {
+      basketball.position.y = groundY;
+      if (Math.abs(ballVelocity.y) > 0.5) { // Only bounce if moving fast enough
+        ballVelocity.y = -ballVelocity.y * BOUNCE_RESTITUTION;
+        // Apply friction to horizontal velocity
+        ballVelocity.x *= 0.85;
+        ballVelocity.z *= 0.85;
+      } else {
+        // Ball comes to rest
+        ballVelocity.set(0, 0, 0);
+        inFlight = false;
+      }
+    }
+    // Clamp to court boundaries
+    basketball.position.x = Math.max(boundaries.minX, Math.min(boundaries.maxX, basketball.position.x));
+    basketball.position.z = Math.max(boundaries.minZ, Math.min(boundaries.maxZ, basketball.position.z));
+  } else {
+    // Basketball movement logic (Phase 1)
+    updateBasketballPosition(basketball, moveState, delta, boundaries);
+  }
 
   // Update shot power UI (in case of animation-based indicator in future)
   updateShotPowerDisplay();
