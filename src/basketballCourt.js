@@ -245,44 +245,46 @@ function addRestrictedAreas(scene) {
 
 // Function to check if a shot position is beyond the 3-point line
 export function isThreePointShot(ballPos, hoopPos) {
-  const courtHalfLength = COURT_LENGTH / 2;
-  const X_OFFSET = 1;
-  
-  // Determine which hoop we're shooting at
-  const isLeftHoop = hoopPos.x < 0;
-  
-  // Calculate the basket center for the respective hoop
-  let basketCenterX;
-  if (isLeftHoop) {
-    const leftHoopX = -courtHalfLength;
-    basketCenterX = leftHoopX + RIM_TO_BACKBOARD_X + X_OFFSET;
-  } else {
-    const rightHoopX = courtHalfLength;
-    basketCenterX = rightHoopX - RIM_TO_BACKBOARD_X - X_OFFSET;
-  }
+  // Use the hoop position directly as the basket center
+  const basketCenterX = hoopPos.x;
+  const basketCenterZ = hoopPos.z; // Should be 0
   
   // Calculate distance from ball to basket center (in XZ plane only)
   const dx = ballPos.x - basketCenterX;
-  const dz = ballPos.z - 0; // basket is at z=0
+  const dz = ballPos.z - basketCenterZ;
   const distanceToBasket = Math.sqrt(dx * dx + dz * dz);
   
-  // Check if the ball is beyond the 3-point arc
-  // For side areas, check if Z coordinate is beyond the straight line portion
+  // Check if the ball is beyond the 3-point line
   const absZ = Math.abs(ballPos.z);
   
+  console.log('=== 3-Point Calculation ===');
+  console.log('Ball pos:', ballPos);
+  console.log('Hoop pos:', hoopPos);
+  console.log('Distance to basket:', distanceToBasket);
+  console.log('absZ:', absZ);
+  console.log('THREE_POINT_SIDE_Z:', THREE_POINT_SIDE_Z);
+  console.log('THREE_POINT_ARC_RADIUS:', THREE_POINT_ARC_RADIUS);
+  
   if (absZ > THREE_POINT_SIDE_Z) {
-    // In the straight line section - check if X distance is sufficient
-    const threePointXOffsetFromBasket = Math.sqrt(
+    // In the straight line section (corners)
+    // Calculate the X distance at which the straight line portion starts
+    const threePointXDistance = Math.sqrt(
       THREE_POINT_ARC_RADIUS * THREE_POINT_ARC_RADIUS - THREE_POINT_SIDE_Z * THREE_POINT_SIDE_Z
     );
     
-    if (isLeftHoop) {
-      return ballPos.x < (basketCenterX + threePointXOffsetFromBasket);
-    } else {
-      return ballPos.x > (basketCenterX - threePointXOffsetFromBasket);
-    }
+    console.log('In straight line section');
+    console.log('threePointXDistance:', threePointXDistance);
+    console.log('Math.abs(dx):', Math.abs(dx));
+    
+    // Check if the ball is far enough from the basket in the X direction
+    const result = Math.abs(dx) > threePointXDistance;
+    console.log('Result:', result);
+    return result;
   } else {
-    // In the arc section - check distance from basket center
-    return distanceToBasket > THREE_POINT_ARC_RADIUS;
+    // In the arc section - simply check if distance is greater than arc radius
+    console.log('In arc section');
+    const result = distanceToBasket > THREE_POINT_ARC_RADIUS;
+    console.log('Result:', result);
+    return result;
   }
 }

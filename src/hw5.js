@@ -130,6 +130,12 @@ function updateShotZoneDisplay() {
     const targetHoop = getNearestHoop(basketball.position);
     const isThreePoint = isThreePointShot(basketball.position, targetHoop);
     
+    // Debug logging
+    console.log('Ball position:', basketball.position);
+    console.log('Target hoop:', targetHoop);
+    console.log('Distance to hoop:', basketball.position.distanceTo(new THREE.Vector3(targetHoop.x, basketball.position.y, targetHoop.z)));
+    console.log('Is three point:', isThreePoint);
+    
     if (isThreePoint) {
       shotZoneEl.textContent = "3-Point Zone";
       shotZoneEl.style.backgroundColor = "#FF6B35";
@@ -305,42 +311,42 @@ const RIM_COLLIDER_RADIUS = 0.018; // slightly less than rim tube radius
 const rimColliders = getRimColliderPositions(COURT_LENGTH, NUM_RIM_COLLIDERS);
 
 // --- DEBUG: Visualize rim colliders ---
-function addRimCollidersDebug(scene, colliders, color) {
-  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3 });
-  for (const pos of colliders) {
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(RIM_COLLIDER_RADIUS, 12, 12), mat);
-    mesh.position.copy(pos);
-    scene.add(mesh);
-  }
-}
+// function addRimCollidersDebug(scene, colliders, color) {
+//   const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3 });
+//   for (const pos of colliders) {
+//     const mesh = new THREE.Mesh(new THREE.SphereGeometry(RIM_COLLIDER_RADIUS, 12, 12), mat);
+//     mesh.position.copy(pos);
+//     scene.add(mesh);
+//   }
+// }
 
 // --- DEBUG: Visualize scoring circular planes ---
-function addScoringPlanesDebug(scene, COURT_LENGTH) {
-  const planeGeometry = new THREE.CircleGeometry((RIM_RADIUS - BALL_RADIUS * 0.8) * 1.5, 32);
-  const planeMaterial = new THREE.MeshBasicMaterial({ 
-    color: 0x00ff00, 
-    transparent: true, 
-    opacity: 0.3,
-    side: THREE.DoubleSide
-  });
+// function addScoringPlanesDebug(scene, COURT_LENGTH) {
+//   const planeGeometry = new THREE.CircleGeometry((RIM_RADIUS - BALL_RADIUS * 0.8) * 1.5, 32);
+//   const planeMaterial = new THREE.MeshBasicMaterial({ 
+//     color: 0x00ff00, 
+//     transparent: true, 
+//     opacity: 0.3,
+//     side: THREE.DoubleSide
+//   });
   
-  // Left hoop scoring plane
-  const leftPlane = new THREE.Mesh(planeGeometry, planeMaterial);
-  leftPlane.position.set(-COURT_LENGTH/2 + BACKBOARD_THICKNESS + 0.1 + RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
-  leftPlane.rotation.x = Math.PI / 2; // Make it horizontal
-  scene.add(leftPlane);
+//   // Left hoop scoring plane
+//   const leftPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+//   leftPlane.position.set(-COURT_LENGTH/2 + BACKBOARD_THICKNESS + 0.1 + RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
+//   leftPlane.rotation.x = Math.PI / 2; // Make it horizontal
+//   scene.add(leftPlane);
   
-  // Right hoop scoring plane
-  const rightPlane = new THREE.Mesh(planeGeometry, planeMaterial);
-  rightPlane.position.set(COURT_LENGTH/2 - BACKBOARD_THICKNESS - RIM_RADIUS - 0.1, RIM_HEIGHT_ABOVE_GROUND, 0);
-  rightPlane.rotation.x = Math.PI / 2; // Make it horizontal
-  scene.add(rightPlane);
-}
+//   // Right hoop scoring plane
+//   const rightPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+//   rightPlane.position.set(COURT_LENGTH/2 - BACKBOARD_THICKNESS - RIM_RADIUS - 0.1, RIM_HEIGHT_ABOVE_GROUND, 0);
+//   rightPlane.rotation.x = Math.PI / 2; // Make it horizontal
+//   scene.add(rightPlane);
+// }
 
 // Uncomment to visualize:
-addRimCollidersDebug(scene, rimColliders.left, 0xff0000);
-addRimCollidersDebug(scene, rimColliders.right, 0x0000ff);
-addScoringPlanesDebug(scene, COURT_LENGTH);
+// addRimCollidersDebug(scene, rimColliders.left, 0xff0000);
+// addRimCollidersDebug(scene, rimColliders.right, 0x0000ff);
+// addScoringPlanesDebug(scene, COURT_LENGTH);
 
 function getActiveRimColliders(ballPos) {
   return (ballPos.x < 0) ? rimColliders.left : rimColliders.right;
