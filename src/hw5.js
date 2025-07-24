@@ -7,7 +7,7 @@ import { createStadiumStands } from './seats.js';
 import { createCourtLighting } from './courtLights.js';
 import { drawScoreboards } from './scoreboard.js';
 import { createMovementState, handleMovementKey, updateBasketballPosition, getCourtBoundaries } from './physics-hw06/basketballMovement.js';
-import { RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, getHoopRimPositions } from './basketballHoops.js';
+import { RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, getHoopRimPositions, getRimColliderPositions } from './basketballHoops.js';
 
 // Scene setup
 const scene = new THREE.Scene();
@@ -225,6 +225,50 @@ function hideTrajectory() {
     trajectoryLine.geometry.dispose();
     trajectoryLine.material.dispose();
     trajectoryLine = null;
+  }
+}
+
+// --- Rim collider setup ---
+const NUM_RIM_COLLIDERS = 16;
+const RIM_COLLIDER_RADIUS = 0.018; // slightly less than rim tube radius
+const rimColliders = getRimColliderPositions(COURT_LENGTH, NUM_RIM_COLLIDERS);
+
+// --- DEBUG: Visualize rim colliders ---
+function addRimCollidersDebug(scene, colliders, color) {
+  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3 });
+  for (const pos of colliders) {
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(RIM_COLLIDER_RADIUS, 12, 12), mat);
+    mesh.position.copy(pos);
+    scene.add(mesh);
+  }
+}
+// Uncomment to visualize:
+// addRimCollidersDebug(scene, rimColliders.left, 0xff0000);
+// addRimCollidersDebug(scene, rimColliders.right, 0x0000ff);
+
+function getActiveRimColliders(ballPos) {
+  return (ballPos.x < 0) ? rimColliders.left : rimColliders.right;
+}
+
+function handleBallRimCollision(ball, velocity) {
+  const colliders = getActiveRimColliders(ball.position);
+  for (const c of colliders) {
+    const dist = ball.position.distanceTo(c);
+    if (dist < (RIM_COLLIDER_RADIUS + BALL_RADIUS)) {
+      // Move ball out of collider
+      const dir = ball.position.clone().sub(c).normalize();
+      ball.position.copy(c.clone().add(dir.multiplyScalar(RIM_COLLIDER_RADIUS + BALL_RADIUS + 0.001)));
+      // Reflect velocity
+      const vDotN = velocity.dot(dir);
+      if (vDotN < 0) {
+        // Only reflect if moving toward collider
+        velocity.add(dir.multiplyScalar(-2 * vDotN));
+        // Apply energy loss
+        velocity.multiplyScalar(0.7);
+      }
+      // Only handle one collision per frame for stability
+      break;
+    }
   }
 }
 
@@ -450,6 +494,7 @@ function animate() {
     basketball.position.x = Math.max(boundaries.minX, Math.min(boundaries.maxX, basketball.position.x));
     basketball.position.z = Math.max(boundaries.minZ, Math.min(boundaries.maxZ, basketball.position.z));
     prevBallPos.copy(basketball.position);
+    handleBallRimCollision(basketball, ballVelocity);
   } else {
     // Basketball movement logic (Phase 1)
     updateBasketballPosition(basketball, moveState, delta, boundaries);

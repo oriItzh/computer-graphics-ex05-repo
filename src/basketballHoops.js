@@ -39,6 +39,28 @@ export function getHoopRimPositions(COURT_LENGTH) {
   return { left: leftRimWorldPos, right: rightRimWorldPos };
 }
 
+export function getRimColliderPositions(COURT_LENGTH, numColliders = 16) {
+  // Returns { left: [Vector3, ...], right: [Vector3, ...] }
+  const leftCenter = new THREE.Vector3(-COURT_LENGTH/2 + BACKBOARD_THICKNESS + 0.10 + RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
+  const rightCenter = new THREE.Vector3(COURT_LENGTH/2 - BACKBOARD_THICKNESS - 0.10 - RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
+  function makeColliders(center) {
+    const arr = [];
+    for (let i = 0; i < numColliders; ++i) {
+      const angle = (i / numColliders) * Math.PI * 2;
+      arr.push(new THREE.Vector3(
+        center.x + Math.cos(angle) * RIM_RADIUS,
+        center.y,
+        center.z + Math.sin(angle) * RIM_RADIUS
+      ));
+    }
+    return arr;
+  }
+  return {
+    left: makeColliders(leftCenter),
+    right: makeColliders(rightCenter)
+  };
+}
+
 export function createBasketballHoops(scene, COURT_LENGTH) {
   const courtHalfLength = COURT_LENGTH / 2;
   createBasketballHoop(scene, -courtHalfLength, 0);         // Left hoop
@@ -53,7 +75,31 @@ function createBasketballHoop(scene, hoopX, rotationY) {
   const backboard = createBackboard();
   hoopGroup.add(backboard);
 
+  // Add a small rectangular bracket between the rim and the backboard
+  const bracketLength = 0.10; // meters, adjust for realism
+  const bracketHeight = 0.025;
+  const bracketWidth = 0.15;
+  const bracketMaterial = new THREE.MeshPhongMaterial({ color: 0xff8c00 });
+  const bracket = new THREE.Mesh(
+    new THREE.BoxGeometry(bracketLength, bracketHeight, bracketWidth),
+    bracketMaterial
+  );
+  // Position: attached to backboard, at rim height
+  bracket.position.set(
+    backboard.position.x + BACKBOARD_THICKNESS/2 + bracketLength/2,
+    RIM_HEIGHT_ABOVE_GROUND,
+    0
+  );
+  hoopGroup.add(bracket);
+
+  // Attach the rim to the end of the bracket (not the backboard)
   const rim = createRim();
+  // The rim's position.x is now relative to the bracket's end
+  rim.position.set(
+    bracket.position.x + bracketLength/2 + RIM_RADIUS,
+    RIM_HEIGHT_ABOVE_GROUND,
+    0
+  );
   hoopGroup.add(rim);
 
   const net = createNet(rim);
