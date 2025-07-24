@@ -58,6 +58,15 @@ const SHOT_POWER_STEP = 2; // percent per key press
 const SHOT_POWER_MIN = 0;
 const SHOT_POWER_MAX = 100;
 
+// Shot angle controls
+let verticalAngle = 50; // degrees, 0-180 (launch angle)
+let horizontalAngle = 0; // degrees, rotation about Y-axis (left/right)
+const ANGLE_STEP = 5; // degrees per key press
+const VERTICAL_ANGLE_MIN = 0;
+const VERTICAL_ANGLE_MAX = 180;
+const HORIZONTAL_ANGLE_MIN = -180;
+const HORIZONTAL_ANGLE_MAX = 180;
+
 // --- Shooting & Physics State (Phase 3) ---
 let ballVelocity = new THREE.Vector3(0, 0, 0);
 let inFlight = false;
@@ -76,27 +85,23 @@ function getNearestHoop(pos) {
   return (pos.x < 0) ? leftHoop : rightHoop;
 }
 
-function getShotInitialVelocity(ballPos, targetHoop, powerPercent) {
-  // Calculate initial velocity vector to reach the hoop with a nice arc
-  // We'll use a fixed arc angle (e.g., 50 deg) and scale speed by power
-  const ARC_ANGLE_DEG = 50;
-  const ARC_ANGLE_RAD = ARC_ANGLE_DEG * Math.PI / 180;
-  const g = -GRAVITY;
-  const dx = targetHoop.x - ballPos.x;
-  const dz = targetHoop.z - ballPos.z;
-  const dy = targetHoop.y - ballPos.y;
-  const distXZ = Math.sqrt(dx*dx + dz*dz);
-  // Power scales the initial speed (min 40%, max 100%)
+function getShotInitialVelocity(ballPos, targetHoop, powerPercent, vertAngle, horizAngle) {
+  // Calculate initial velocity vector using the specified angles
+  const vertAngleRad = vertAngle * Math.PI / 180;
+  const horizAngleRad = horizAngle * Math.PI / 180;
+  
+  // Power scales the initial speed
   const minSpeed = 6.5; // m/s (tunable)
   const maxSpeed = 13.0; // m/s (tunable)
   const speed = minSpeed + (maxSpeed - minSpeed) * (powerPercent / 100);
-  // Decompose speed into components
-  const vxz = speed * Math.cos(ARC_ANGLE_RAD);
-  const vy = speed * Math.sin(ARC_ANGLE_RAD);
-  // Direction in XZ
-  const dirXZ = new THREE.Vector3(dx, 0, dz).normalize();
-  const vx = dirXZ.x * vxz;
-  const vz = dirXZ.z * vxz;
+  
+  // Calculate velocity components based on angles
+  // Vertical angle: 0° = horizontal, 90° = straight up
+  // Horizontal angle: 0° = towards positive X, 90° = towards positive Z
+  const vx = speed * Math.cos(vertAngleRad) * Math.cos(horizAngleRad);
+  const vy = speed * Math.sin(vertAngleRad);
+  const vz = speed * Math.cos(vertAngleRad) * Math.sin(horizAngleRad);
+  
   return new THREE.Vector3(vx, vy, vz);
 }
 
@@ -233,8 +238,14 @@ function showTrajectory(ballPos, targetHoop, powerPercent) {
     if (y < BALL_RADIUS + BALL_GROUND_OFFSET) break;
   }
   const geometry = new THREE.BufferGeometry().setFromPoints(points);
-  const material = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 4 });
+  const material = new THREE.LineDashedMaterial({ 
+    color: 0xff0000, 
+    linewidth: 4,
+    dashSize: 0.3,
+    gapSize: 0.1
+  });
   trajectoryLine = new THREE.Line(geometry, material);
+  trajectoryLine.computeLineDistances(); // Required for dashed lines
   scene.add(trajectoryLine);
 }
 
@@ -253,14 +264,14 @@ const RIM_COLLIDER_RADIUS = 0.018; // slightly less than rim tube radius
 const rimColliders = getRimColliderPositions(COURT_LENGTH, NUM_RIM_COLLIDERS);
 
 // --- DEBUG: Visualize rim colliders ---
-function addRimCollidersDebug(scene, colliders, color) {
-  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3 });
-  for (const pos of colliders) {
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(RIM_COLLIDER_RADIUS, 12, 12), mat);
-    mesh.position.copy(pos);
-    scene.add(mesh);
-  }
-}
+// function addRimCollidersDebug(scene, colliders, color) {
+//   const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3 });
+//   for (const pos of colliders) {
+//     const mesh = new THREE.Mesh(new THREE.SphereGeometry(RIM_COLLIDER_RADIUS, 12, 12), mat);
+//     mesh.position.copy(pos);
+//     scene.add(mesh);
+//   }
+// }
 
 // --- DEBUG: Visualize scoring circular planes ---
 // function addScoringPlanesDebug(scene, COURT_LENGTH) {
