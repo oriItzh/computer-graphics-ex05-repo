@@ -7,6 +7,7 @@ import { createStadiumStands } from './seats.js';
 import { createCourtLighting } from './courtLights.js';
 import { drawScoreboards } from './scoreboard.js';
 import { createMovementState, handleMovementKey, updateBasketballPosition, getCourtBoundaries } from './physics-hw06/basketballMovement.js';
+import { RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, getHoopRimPositions } from './basketballHoops.js';
 
 // Scene setup
 const scene = new THREE.Scene();
@@ -70,8 +71,9 @@ const leftHoop = new THREE.Vector3(-COURT_LENGTH/2, 3.05, 0);
 const rightHoop = new THREE.Vector3(COURT_LENGTH/2, 3.05, 0);
 
 function getNearestHoop(pos) {
-  // Returns the position of the nearest hoop
-  return (pos.x < 0) ? rightHoop : leftHoop;
+  // Returns the position of the hoop on the same half-court as the ball
+  // Left half: x < 0 -> leftHoop; Right half: x >= 0 -> rightHoop
+  return (pos.x < 0) ? leftHoop : rightHoop;
 }
 
 function getShotInitialVelocity(ballPos, targetHoop, powerPercent) {
@@ -98,12 +100,90 @@ function getShotInitialVelocity(ballPos, targetHoop, powerPercent) {
   return new THREE.Vector3(vx, vy, vz);
 }
 
+// --- Scoring sphere for rim detection ---
+const SCORING_SPHERE_RADIUS = RIM_RADIUS - BALL_RADIUS * 0.2; // slightly smaller than rim
+const leftScoringSphere = {
+  center: new THREE.Vector3(-COURT_LENGTH/2 + BACKBOARD_THICKNESS + RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0),
+  radius: SCORING_SPHERE_RADIUS
+};
+const rightScoringSphere = {
+  center: new THREE.Vector3(COURT_LENGTH/2 - BACKBOARD_THICKNESS - RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0),
+  radius: SCORING_SPHERE_RADIUS
+};
+
+function getScoringSphere(ballPos) {
+  // Returns the scoring sphere for the current half-court
+  return (ballPos.x < 0) ? leftScoringSphere : rightScoringSphere;
+}
+
+function isBallThroughHoop(ballPos, prevBallPos, scoringSphere) {
+  // Ball must pass from above to below the scoring sphere, intersecting it, and be moving downward
+  const wasAbove = prevBallPos.y > scoringSphere.center.y;
+  const isBelow = ballPos.y <= scoringSphere.center.y;
+  const distNow = ballPos.distanceTo(scoringSphere.center);
+  const distPrev = prevBallPos.distanceTo(scoringSphere.center);
+  const intersectsNow = distNow < (scoringSphere.radius + BALL_RADIUS);
+  const intersectsPrev = distPrev > (scoringSphere.radius + BALL_RADIUS);
+  const movingDown = (ballPos.y - prevBallPos.y) < 0;
+  return wasAbove && isBelow && intersectsNow && intersectsPrev && movingDown;
+}
+
+// --- Scoring and statistics state ---
+let score = 0;
+let attempts = 0;
+let shotsMade = 0;
+let lastShotMade = false;
+let shotInProgress = false;
+
+function updateScoreUI() {
+  const scoreEl = document.getElementById('score');
+  const attemptsEl = document.getElementById('attempts');
+  const madeEl = document.getElementById('made');
+  const accuracyEl = document.getElementById('accuracy');
+  if (scoreEl) scoreEl.textContent = `Score: ${score}`;
+  if (attemptsEl) attemptsEl.textContent = `Attempts: ${attempts}`;
+  if (madeEl) madeEl.textContent = `Shots Made: ${shotsMade}`;
+  if (accuracyEl) accuracyEl.textContent = `Accuracy: ${attempts > 0 ? Math.round((shotsMade/attempts)*100) : 0}%`;
+}
+
+function setStatusMessage(msg, color = '#FFD700') {
+  const statusEl = document.getElementById('status-message');
+  if (statusEl) {
+    statusEl.textContent = msg;
+    statusEl.style.color = color;
+  }
+}
+
+function clearStatusMessage() {
+  setStatusMessage('');
+}
+
+// --- Ball rotation state ---
+let ballRotationAxis = new THREE.Vector3(1,0,0);
+let ballRotationSpeed = 0;
+
+function updateBallRotation(velocity, delta) {
+  // Only rotate if moving
+  const speed = velocity.length();
+  if (speed > 0.01) {
+    // Axis is perpendicular to velocity (in XZ plane for rolling, in 3D for flight)
+    const axis = new THREE.Vector3(-velocity.z, 0, velocity.x).normalize();
+    ballRotationAxis.copy(axis);
+    ballRotationSpeed = speed / BALL_RADIUS; // radians/sec
+    basketball.rotateOnAxis(ballRotationAxis, ballRotationSpeed * delta);
+  }
+}
+
 function resetBall() {
   basketball.position.set(0, BALL_RADIUS + BALL_GROUND_OFFSET, 0);
   ballVelocity.set(0, 0, 0);
   inFlight = false;
   shotPower = 50;
+  lastShotMade = false;
+  shotInProgress = false;
   updateShotPowerDisplay();
+  updateScoreUI();
+  clearStatusMessage();
 }
 
 function clampShotPower(val) {
@@ -251,18 +331,26 @@ function setupEventListeners() {
           const targetHoop = getNearestHoop(basketball.position);
           ballVelocity = getShotInitialVelocity(basketball.position, targetHoop, shotPower);
           inFlight = true;
+          attempts++;
+          lastShotMade = false;
+          shotInProgress = false;
+          updateScoreUI();
+          clearStatusMessage();
         }
         break;
       case 'r':
         resetBall();
+        clearStatusMessage();
         break;
     }
   });
 
   // Keyboard controls for basketball movement
   function handleBasketballMovementKey(e, isDown) {
-    // Only allow movement if not in flight
-    if (!inFlight) handleMovementKey(e, isDown, moveState);
+    // Only allow movement if not in flight and only for arrow keys
+    if (!inFlight && ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)) {
+      handleMovementKey(e, isDown, moveState);
+    }
   }
   document.addEventListener('keydown', (e) => handleBasketballMovementKey(e, true));
   document.addEventListener('keyup', (e) => handleBasketballMovementKey(e, false));
@@ -270,8 +358,11 @@ function setupEventListeners() {
 
 setupEventListeners();
 
-// Animation loop
+// --- Main animation loop changes ---
 let lastTime = performance.now();
+let prevBallPos = basketball.position.clone();
+const hoopRims = getHoopRimPositions(COURT_LENGTH);
+
 function animate() {
   requestAnimationFrame(animate);
   controls.enabled = isOrbitEnabled;
@@ -287,6 +378,18 @@ function animate() {
     basketball.position.x += ballVelocity.x * delta;
     basketball.position.y += ballVelocity.y * delta;
     basketball.position.z += ballVelocity.z * delta;
+    // Ball rotation
+    updateBallRotation(ballVelocity, delta);
+    // Rim/hoop collision detection (scoring)
+    let scoringSphere = getScoringSphere(basketball.position);
+    if (!shotInProgress && isBallThroughHoop(basketball.position, prevBallPos, scoringSphere)) {
+      score += 2;
+      shotsMade++;
+      lastShotMade = true;
+      setStatusMessage('SHOT MADE!', '#00FF00');
+      updateScoreUI();
+      shotInProgress = true;
+    }
     // Ground collision
     const groundY = BALL_RADIUS + BALL_GROUND_OFFSET;
     if (basketball.position.y <= groundY) {
@@ -300,18 +403,37 @@ function animate() {
         // Ball comes to rest
         ballVelocity.set(0, 0, 0);
         inFlight = false;
+        // If shotInProgress is false, it means the shot missed
+        if (!shotInProgress) {
+          lastShotMade = false;
+          setStatusMessage('MISSED SHOT', '#FF3333');
+        }
+        shotInProgress = false;
+        setTimeout(clearStatusMessage, 1200);
       }
     }
     // Clamp to court boundaries
     basketball.position.x = Math.max(boundaries.minX, Math.min(boundaries.maxX, basketball.position.x));
     basketball.position.z = Math.max(boundaries.minZ, Math.min(boundaries.maxZ, basketball.position.z));
+    prevBallPos.copy(basketball.position);
   } else {
     // Basketball movement logic (Phase 1)
     updateBasketballPosition(basketball, moveState, delta, boundaries);
+    // Ball rotation for rolling
+    let moveVec = new THREE.Vector3(0,0,0);
+    if (moveState.left) moveVec.x -= 1;
+    if (moveState.right) moveVec.x += 1;
+    if (moveState.up) moveVec.z -= 1;
+    if (moveState.down) moveVec.z += 1;
+    if (moveVec.lengthSq() > 0) {
+      moveVec.normalize().multiplyScalar(6); // match BALL_MOVE_SPEED
+      updateBallRotation(moveVec, delta);
+    }
   }
 
   // Update shot power UI (in case of animation-based indicator in future)
   updateShotPowerDisplay();
+  updateScoreUI();
 
   renderer.render(scene, camera);
 }

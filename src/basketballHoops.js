@@ -1,7 +1,7 @@
 import { createNbaLogoTexture } from "./textures/nbaLogo.js";
-const RIM_RADIUS = 0.225;
+export const RIM_RADIUS = 0.225;
 const RIM_TUBE_RADIUS = 0.02;
-const RIM_HEIGHT_ABOVE_GROUND = 3.05;
+export const RIM_HEIGHT_ABOVE_GROUND = 3.05;
 const RIM_SEGMENTS = 32;
 
 const BACKBOARD_WIDTH = 1.8;
@@ -26,6 +26,18 @@ const SHOOTER_SQUARE_WIDTH = BACKBOARD_WIDTH / 2.5;
 const SHOOTER_SQUARE_HEIGHT = BACKBOARD_HEIGHT / 2.5;
 const SHOOTER_SQUARE_ABOVE_RIM = 0.05; // vertical distance above rim
 const SHOOTER_SQUARE_FRONT = 0.01; // just in front of backboard
+
+let leftRimWorldPos = null;
+let rightRimWorldPos = null;
+
+export function getHoopRimPositions(COURT_LENGTH) {
+  // Returns { left: Vector3, right: Vector3 }
+  if (!leftRimWorldPos || !rightRimWorldPos) {
+    leftRimWorldPos = new THREE.Vector3(-COURT_LENGTH/2 + BACKBOARD_THICKNESS + RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
+    rightRimWorldPos = new THREE.Vector3(COURT_LENGTH/2 - BACKBOARD_THICKNESS - RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
+  }
+  return { left: leftRimWorldPos, right: rightRimWorldPos };
+}
 
 export function createBasketballHoops(scene, COURT_LENGTH) {
   const courtHalfLength = COURT_LENGTH / 2;

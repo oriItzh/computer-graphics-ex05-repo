@@ -11,7 +11,14 @@ export function createUI() {
   scoreContainer.style.fontFamily = 'Arial, sans-serif';
   scoreContainer.style.fontSize = '24px';
   scoreContainer.style.fontWeight = 'bold';
-  scoreContainer.innerHTML = `<div id="score">Score: 0</div>\n<div id="shot-power-indicator" style="font-size:18px;margin-top:6px;">Shot Power: 50%</div>`;
+  scoreContainer.innerHTML = `
+    <div id="score">Score: 0</div>
+    <div id="attempts">Attempts: 0</div>
+    <div id="made">Shots Made: 0</div>
+    <div id="accuracy">Accuracy: 0%</div>
+    <div id="shot-power-indicator" style="font-size:18px;margin-top:6px;">Shot Power: 50%</div>
+    <div id="status-message" style="font-size:20px;margin-top:10px;color:#FFD700;"></div>
+  `;
   document.body.appendChild(scoreContainer);
 
   const controlsContainer = document.createElement('div');
@@ -34,9 +41,9 @@ export function createUI() {
     <p style="margin: 5px 0">L - Toggle main lights</p>
     <p style="margin: 5px 0">K - Toggle court lights</p>
     <p style="margin: 5px 0">Arrow Keys - Move basketball</p>
-    <p style="margin: 5px 0">W/S - Adjust power (coming in HW06)</p>
-    <p style="margin: 5px 0">Spacebar - Shoot (coming in HW06)</p>
-    <p style="margin: 5px 0">R - Reset ball position (coming in HW06)</p>
+    <p style="margin: 5px 0">W/S - Adjust shot power</p>
+    <p style="margin: 5px 0">Spacebar - Shoot</p>
+    <p style="margin: 5px 0">R - Reset ball position</p>
   `;
   document.body.appendChild(controlsContainer);
 
