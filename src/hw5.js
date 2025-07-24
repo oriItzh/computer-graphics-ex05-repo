@@ -167,7 +167,7 @@ function isBallThroughHoop(ballPos, prevBallPos, hoopPos) {
   ).length();
   
   // Ball scores if it passes through the circular opening (accounting for ball radius)
-  const effectiveRimRadius = RIM_RADIUS - BALL_RADIUS * 0.8; // Slightly tighter tolerance
+  const effectiveRimRadius = (RIM_RADIUS - BALL_RADIUS * 0.8) * 1.5; // Increased by factor of 1.5
   return distanceFromRimCenter <= effectiveRimRadius;
 }
 
@@ -192,9 +192,12 @@ function resetBall() {
   ballVelocity.set(0, 0, 0);
   inFlight = false;
   shotPower = 50;
+  verticalAngle = 50;
+  horizontalAngle = 0;
   lastShotMade = false;
   shotInProgress = false;
   updateShotPowerDisplay();
+  updateAngleDisplays();
   updateScoreUI();
   clearStatusMessage();
   hideTrajectory();
@@ -209,10 +212,28 @@ function updateShotPowerDisplay() {
   if (el) el.textContent = `Shot Power: ${shotPower}%`;
 }
 
+function clampVerticalAngle(val) {
+  return Math.max(VERTICAL_ANGLE_MIN, Math.min(VERTICAL_ANGLE_MAX, val));
+}
+
+function clampHorizontalAngle(val) {
+  // Allow wrapping for horizontal angle
+  while (val > HORIZONTAL_ANGLE_MAX) val -= 360;
+  while (val < HORIZONTAL_ANGLE_MIN) val += 360;
+  return val;
+}
+
+function updateAngleDisplays() {
+  const vertEl = document.getElementById('vertical-angle-indicator');
+  const horizEl = document.getElementById('horizontal-angle-indicator');
+  if (vertEl) vertEl.textContent = `Vertical Angle: ${verticalAngle}°`;
+  if (horizEl) horizEl.textContent = `Horizontal Angle: ${horizontalAngle}°`;
+}
+
 // --- Trajectory visualization ---
 let trajectoryLine = null;
 
-function showTrajectory(ballPos, targetHoop, powerPercent) {
+function showTrajectory(ballPos, targetHoop, powerPercent, vertAngle, horizAngle) {
   // Remove old trajectory if exists
   if (trajectoryLine) {
     scene.remove(trajectoryLine);
@@ -220,8 +241,8 @@ function showTrajectory(ballPos, targetHoop, powerPercent) {
     trajectoryLine.material.dispose();
     trajectoryLine = null;
   }
-  // Calculate initial velocity
-  const v0 = getShotInitialVelocity(ballPos, targetHoop, powerPercent);
+  // Calculate initial velocity using current angles
+  const v0 = getShotInitialVelocity(ballPos, targetHoop, powerPercent, vertAngle, horizAngle);
   const points = [];
   const N = 60; // number of points
   let t = 0;
@@ -259,47 +280,47 @@ function hideTrajectory() {
 }
 
 // --- Rim collider setup ---
-const NUM_RIM_COLLIDERS = 16;
+const NUM_RIM_COLLIDERS = 32;
 const RIM_COLLIDER_RADIUS = 0.018; // slightly less than rim tube radius
 const rimColliders = getRimColliderPositions(COURT_LENGTH, NUM_RIM_COLLIDERS);
 
 // --- DEBUG: Visualize rim colliders ---
-// function addRimCollidersDebug(scene, colliders, color) {
-//   const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3 });
-//   for (const pos of colliders) {
-//     const mesh = new THREE.Mesh(new THREE.SphereGeometry(RIM_COLLIDER_RADIUS, 12, 12), mat);
-//     mesh.position.copy(pos);
-//     scene.add(mesh);
-//   }
-// }
+function addRimCollidersDebug(scene, colliders, color) {
+  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3 });
+  for (const pos of colliders) {
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(RIM_COLLIDER_RADIUS, 12, 12), mat);
+    mesh.position.copy(pos);
+    scene.add(mesh);
+  }
+}
 
 // --- DEBUG: Visualize scoring circular planes ---
-// function addScoringPlanesDebug(scene, COURT_LENGTH) {
-//   const planeGeometry = new THREE.CircleGeometry(RIM_RADIUS - BALL_RADIUS * 0.8, 32);
-//   const planeMaterial = new THREE.MeshBasicMaterial({ 
-//     color: 0x00ff00, 
-//     transparent: true, 
-//     opacity: 0.3,
-//     side: THREE.DoubleSide
-//   });
+function addScoringPlanesDebug(scene, COURT_LENGTH) {
+  const planeGeometry = new THREE.CircleGeometry((RIM_RADIUS - BALL_RADIUS * 0.8) * 1.5, 32);
+  const planeMaterial = new THREE.MeshBasicMaterial({ 
+    color: 0x00ff00, 
+    transparent: true, 
+    opacity: 0.3,
+    side: THREE.DoubleSide
+  });
   
-//   // Left hoop scoring plane
-//   const leftPlane = new THREE.Mesh(planeGeometry, planeMaterial);
-//   leftPlane.position.set(-COURT_LENGTH/2 + BACKBOARD_THICKNESS + RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
-//   leftPlane.rotation.x = Math.PI / 2; // Make it horizontal
-//   scene.add(leftPlane);
+  // Left hoop scoring plane
+  const leftPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+  leftPlane.position.set(-COURT_LENGTH/2 + BACKBOARD_THICKNESS + 0.1 + RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
+  leftPlane.rotation.x = Math.PI / 2; // Make it horizontal
+  scene.add(leftPlane);
   
-//   // Right hoop scoring plane
-//   const rightPlane = new THREE.Mesh(planeGeometry, planeMaterial);
-//   rightPlane.position.set(COURT_LENGTH/2 - BACKBOARD_THICKNESS - RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
-//   rightPlane.rotation.x = Math.PI / 2; // Make it horizontal
-//   scene.add(rightPlane);
-// }
+  // Right hoop scoring plane
+  const rightPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+  rightPlane.position.set(COURT_LENGTH/2 - BACKBOARD_THICKNESS - RIM_RADIUS - 0.1, RIM_HEIGHT_ABOVE_GROUND, 0);
+  rightPlane.rotation.x = Math.PI / 2; // Make it horizontal
+  scene.add(rightPlane);
+}
 
-// // Uncomment to visualize:
-// addRimCollidersDebug(scene, rimColliders.left, 0xff0000);
-// addRimCollidersDebug(scene, rimColliders.right, 0x0000ff);
-// addScoringPlanesDebug(scene, COURT_LENGTH);
+// Uncomment to visualize:
+addRimCollidersDebug(scene, rimColliders.left, 0xff0000);
+addRimCollidersDebug(scene, rimColliders.right, 0x0000ff);
+addScoringPlanesDebug(scene, COURT_LENGTH);
 
 function getActiveRimColliders(ballPos) {
   return (ballPos.x < 0) ? rimColliders.left : rimColliders.right;
@@ -457,11 +478,31 @@ function setupEventListeners() {
         shotPower = clampShotPower(shotPower - SHOT_POWER_STEP);
         updateShotPowerDisplay();
         break;
+      case 'q':
+        // Increase vertical angle
+        verticalAngle = clampVerticalAngle(verticalAngle + ANGLE_STEP);
+        updateAngleDisplays();
+        break;
+      case 'e':
+        // Decrease vertical angle
+        verticalAngle = clampVerticalAngle(verticalAngle - ANGLE_STEP);
+        updateAngleDisplays();
+        break;
+      case 'a':
+        // Rotate left (negative horizontal angle)
+        horizontalAngle = clampHorizontalAngle(horizontalAngle - ANGLE_STEP);
+        updateAngleDisplays();
+        break;
+      case 'd':
+        // Rotate right (positive horizontal angle)
+        horizontalAngle = clampHorizontalAngle(horizontalAngle + ANGLE_STEP);
+        updateAngleDisplays();
+        break;
       case ' ':
         // Spacebar: shoot if not in flight
         if (!inFlight) {
           const targetHoop = getNearestHoop(basketball.position);
-          ballVelocity = getShotInitialVelocity(basketball.position, targetHoop, shotPower);
+          ballVelocity = getShotInitialVelocity(basketball.position, targetHoop, shotPower, verticalAngle, horizontalAngle);
           inFlight = true;
           attempts++;
           lastShotMade = false;
@@ -567,10 +608,11 @@ function animate() {
 
   // Update shot power UI (in case of animation-based indicator in future)
   updateShotPowerDisplay();
+  updateAngleDisplays();
   updateScoreUI();
   if (!inFlight) {
     const targetHoop = getNearestHoop(basketball.position);
-    showTrajectory(basketball.position, targetHoop, shotPower);
+    showTrajectory(basketball.position, targetHoop, shotPower, verticalAngle, horizontalAngle);
   } else {
     hideTrajectory();
   }
