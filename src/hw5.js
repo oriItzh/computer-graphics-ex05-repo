@@ -173,6 +173,7 @@ function resetBall() {
   updateShotPowerDisplay();
   updateScoreUI();
   clearStatusMessage();
+  hideTrajectory();
 }
 
 function clampShotPower(val) {
@@ -182,6 +183,49 @@ function clampShotPower(val) {
 function updateShotPowerDisplay() {
   const el = document.getElementById('shot-power-indicator');
   if (el) el.textContent = `Shot Power: ${shotPower}%`;
+}
+
+// --- Trajectory visualization ---
+let trajectoryLine = null;
+
+function showTrajectory(ballPos, targetHoop, powerPercent) {
+  // Remove old trajectory if exists
+  if (trajectoryLine) {
+    scene.remove(trajectoryLine);
+    trajectoryLine.geometry.dispose();
+    trajectoryLine.material.dispose();
+    trajectoryLine = null;
+  }
+  // Calculate initial velocity
+  const v0 = getShotInitialVelocity(ballPos, targetHoop, powerPercent);
+  const points = [];
+  const N = 60; // number of points
+  let t = 0;
+  let pos = ballPos.clone();
+  let v = v0.clone();
+  for (let i = 0; i < N; ++i) {
+    t = i * 0.05;
+    // Parabolic motion: x = x0 + vx*t, y = y0 + vy*t + 0.5*gt^2, z = z0 + vz*t
+    const x = ballPos.x + v0.x * t;
+    const y = ballPos.y + v0.y * t + 0.5 * GRAVITY * t * t;
+    const z = ballPos.z + v0.z * t;
+    points.push(new THREE.Vector3(x, y, z));
+    // Stop if below ground
+    if (y < BALL_RADIUS + BALL_GROUND_OFFSET) break;
+  }
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const material = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 4 });
+  trajectoryLine = new THREE.Line(geometry, material);
+  scene.add(trajectoryLine);
+}
+
+function hideTrajectory() {
+  if (trajectoryLine) {
+    scene.remove(trajectoryLine);
+    trajectoryLine.geometry.dispose();
+    trajectoryLine.material.dispose();
+    trajectoryLine = null;
+  }
 }
 
 // Camera preset positions for different views
@@ -325,6 +369,7 @@ function setupEventListeners() {
           shotInProgress = false;
           updateScoreUI();
           clearStatusMessage();
+          hideTrajectory();
         }
         break;
       case 'r':
@@ -423,6 +468,12 @@ function animate() {
   // Update shot power UI (in case of animation-based indicator in future)
   updateShotPowerDisplay();
   updateScoreUI();
+  if (!inFlight) {
+    const targetHoop = getNearestHoop(basketball.position);
+    showTrajectory(basketball.position, targetHoop, shotPower);
+  } else {
+    hideTrajectory();
+  }
 
   renderer.render(scene, camera);
 }
