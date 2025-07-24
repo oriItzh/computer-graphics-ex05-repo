@@ -11,7 +11,7 @@ export function createUI() {
   scoreContainer.style.fontFamily = 'Arial, sans-serif';
   scoreContainer.style.fontSize = '24px';
   scoreContainer.style.fontWeight = 'bold';
-  scoreContainer.innerHTML = `<div id="score">Score: 0</div>`;
+  scoreContainer.innerHTML = `<div id="score">Score: 0</div>\n<div id="shot-power-indicator" style="font-size:18px;margin-top:6px;">Shot Power: 50%</div>`;
   document.body.appendChild(scoreContainer);
 
   const controlsContainer = document.createElement('div');

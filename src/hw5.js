@@ -51,6 +51,21 @@ createUI();
 const moveState = createMovementState();
 const boundaries = getCourtBoundaries(COURT_LENGTH, COURT_WIDTH);
 
+// Shot power state (Phase 2)
+let shotPower = 50; // percent, 0-100
+const SHOT_POWER_STEP = 2; // percent per key press
+const SHOT_POWER_MIN = 0;
+const SHOT_POWER_MAX = 100;
+
+function clampShotPower(val) {
+  return Math.max(SHOT_POWER_MIN, Math.min(SHOT_POWER_MAX, val));
+}
+
+function updateShotPowerDisplay() {
+  const el = document.getElementById('shot-power-indicator');
+  if (el) el.textContent = `Shot Power: ${shotPower}%`;
+}
+
 // Camera preset positions for different views
 const cameraPresets = {
   default: {
@@ -173,6 +188,14 @@ function setupEventListeners() {
         window.lightControls.courtLightValue.textContent = isCourtLightOn ? 
           window.lightControls.courtLightSlider.value : '0.0';
         break;
+      case 'w':
+        shotPower = clampShotPower(shotPower + SHOT_POWER_STEP);
+        updateShotPowerDisplay();
+        break;
+      case 's':
+        shotPower = clampShotPower(shotPower - SHOT_POWER_STEP);
+        updateShotPowerDisplay();
+        break;
     }
   });
 
@@ -198,6 +221,9 @@ function animate() {
   const delta = (now - lastTime) / 1000; // seconds
   lastTime = now;
   updateBasketballPosition(basketball, moveState, delta, boundaries);
+
+  // Update shot power UI (in case of animation-based indicator in future)
+  updateShotPowerDisplay();
 
   renderer.render(scene, camera);
 }
