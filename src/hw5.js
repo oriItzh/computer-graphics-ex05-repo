@@ -132,14 +132,19 @@ function clearStatusMessage() {
 
 // --- Rim/hoop collision detection ---
 function isBallThroughHoop(ballPos, prevBallPos, hoopPos) {
-  // Ball must pass from above to below rim height, within rim radius in XZ, and be moving downward
-  const wasAbove = prevBallPos.y > RIM_HEIGHT_ABOVE_GROUND;
-  const isBelow = ballPos.y <= RIM_HEIGHT_ABOVE_GROUND;
-  const distXZ = Math.sqrt((ballPos.x - hoopPos.x)**2 + (ballPos.z - hoopPos.z)**2);
-  // Allow for ball radius margin
-  const withinRim = distXZ < (RIM_RADIUS - BALL_RADIUS * 0.5);
-  const movingDown = (ballPos.y - prevBallPos.y) < 0;
-  return wasAbove && isBelow && withinRim && movingDown;
+  // Ball must pass from above to below the rim plane (y = rim height),
+  // and the center must be within the rim's XZ circle (allowing for ball radius margin)
+  const rimY = RIM_HEIGHT_ABOVE_GROUND;
+  const wasAbove = prevBallPos.y > rimY;
+  const isBelow = ballPos.y <= rimY;
+  // Project ball position onto XZ plane and check distance to rim center
+  const dx = ballPos.x - hoopPos.x;
+  const dz = ballPos.z - hoopPos.z;
+  const distXZ = Math.sqrt(dx*dx + dz*dz);
+  // Allow for ball radius margin (so the whole ball can fit through)
+  const withinRim = distXZ < (RIM_RADIUS - BALL_RADIUS * 0.1);
+  // Only count if the ball's center crosses from above to below the rim plane and is within the rim
+  return wasAbove && isBelow && withinRim;
 }
 
 // --- Ball rotation state ---
