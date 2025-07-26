@@ -57,9 +57,8 @@ export function clampHorizontalAngle(val) {
 
 export function updateAngleDisplays(verticalAngle, horizontalAngle) {
   const vertEl = document.getElementById('vertical-angle-indicator');
-  const horizEl = document.getElementById('horizontal-angle-indicator');
   if (vertEl) vertEl.textContent = `Vertical Angle: ${verticalAngle}°`;
-  if (horizEl) horizEl.textContent = `Horizontal Angle: ${horizontalAngle}°`;
+  // Horizontal angle display removed since auto-aiming is used
 }
 
 // --- Velocity Calculation ---
@@ -263,4 +262,16 @@ export function getNearestHoop(pos, leftHoop, rightHoop) {
 
 export function getActiveRimColliders(ballPos, rimColliders) {
   return (ballPos.x < 0) ? rimColliders.left : rimColliders.right;
+}
+
+export function calculateAutoAimHorizontalAngle(ballPos, targetHoop) {
+  // Calculate the direction vector from ball to hoop
+  const direction = new THREE.Vector3().subVectors(targetHoop, ballPos);
+  
+  // Calculate horizontal angle in degrees
+  // atan2(z, x) gives angle in radians, convert to degrees
+  const horizontalAngleRad = Math.atan2(direction.z, direction.x);
+  const horizontalAngleDeg = horizontalAngleRad * 180 / Math.PI;
+  
+  return horizontalAngleDeg;
 }

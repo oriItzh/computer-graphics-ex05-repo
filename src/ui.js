@@ -18,7 +18,6 @@ export function createUI() {
     <div id="shot-type-indicator" style="margin-top:8px;color:#FFD700;">Shot Type: 2-POINT</div>
     <div id="shot-power-indicator" style="margin-top:6px;">Shot Power: 50%</div>
     <div id="vertical-angle-indicator" style="margin-top:6px;">Vertical Angle: 50°</div>
-    <div id="horizontal-angle-indicator" style="margin-top:6px;">Horizontal Angle: 0°</div>
     <div id="status-message" style="margin-top:10px;color:#FFD700;"></div>
   `;
   document.body.appendChild(scoreContainer);
@@ -45,7 +44,7 @@ export function createUI() {
     <p style="margin: 5px 0">Arrow Keys - Move basketball</p>
     <p style="margin: 5px 0">W/S - Adjust shot power</p>
     <p style="margin: 5px 0">Q/E - Adjust vertical angle</p>
-    <p style="margin: 5px 0">A/D - Adjust horizontal angle</p>
+    <p style="margin: 5px 0; color: #FFD700">Auto-aim at nearest hoop</p>
     <p style="margin: 5px 0">Spacebar - Shoot</p>
     <p style="margin: 5px 0">R - Reset ball position</p>
   `;

@@ -25,6 +25,7 @@ import {
   clampHorizontalAngle,
   updateShotPowerDisplay,
   updateAngleDisplays,
+  calculateAutoAimHorizontalAngle,
   SHOT_POWER_STEP,
   ANGLE_STEP,
   GRAVITY,
@@ -100,6 +101,9 @@ function resetBall() {
   resetBallPhysics(basketball, physicsState);
   resetScoring(scoringState);
   updateShotPowerDisplay(physicsState.shotPower);
+  // Auto-aim will calculate the horizontal angle automatically
+  const targetHoop = getNearestHoop(basketball.position, leftHoop, rightHoop);
+  physicsState.horizontalAngle = calculateAutoAimHorizontalAngle(basketball.position, targetHoop);
   updateAngleDisplays(physicsState.verticalAngle, physicsState.horizontalAngle);
   updateScoreUI(scoringState);
   updateShotTypeDisplay(getShotTypeDisplay(basketball.position));
@@ -134,13 +138,13 @@ function addScoringPlanesDebug(scene, COURT_LENGTH) {
   
   // Left hoop scoring plane
   const leftPlane = new THREE.Mesh(planeGeometry, planeMaterial);
-  leftPlane.position.set(-COURT_LENGTH/2 + BACKBOARD_THICKNESS + RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
+  leftPlane.position.set(-COURT_LENGTH/2 + BACKBOARD_THICKNESS + RIM_RADIUS + 0.1, RIM_HEIGHT_ABOVE_GROUND, 0);
   leftPlane.rotation.x = Math.PI / 2; // Make it horizontal
   scene.add(leftPlane);
   
   // Right hoop scoring plane
   const rightPlane = new THREE.Mesh(planeGeometry, planeMaterial);
-  rightPlane.position.set(COURT_LENGTH/2 - BACKBOARD_THICKNESS - RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
+  rightPlane.position.set(COURT_LENGTH/2 - BACKBOARD_THICKNESS - RIM_RADIUS - 0.1, RIM_HEIGHT_ABOVE_GROUND, 0);
   rightPlane.rotation.x = Math.PI / 2; // Make it horizontal
   scene.add(rightPlane);
 }
@@ -290,16 +294,6 @@ function setupEventListeners() {
         physicsState.verticalAngle = clampVerticalAngle(physicsState.verticalAngle - ANGLE_STEP);
         updateAngleDisplays(physicsState.verticalAngle, physicsState.horizontalAngle);
         break;
-      case 'a':
-        // Rotate left (negative horizontal angle)
-        physicsState.horizontalAngle = clampHorizontalAngle(physicsState.horizontalAngle - ANGLE_STEP);
-        updateAngleDisplays(physicsState.verticalAngle, physicsState.horizontalAngle);
-        break;
-      case 'd':
-        // Rotate right (positive horizontal angle)
-        physicsState.horizontalAngle = clampHorizontalAngle(physicsState.horizontalAngle + ANGLE_STEP);
-        updateAngleDisplays(physicsState.verticalAngle, physicsState.horizontalAngle);
-        break;
       case ' ':
         // Spacebar: shoot if not in flight
         if (!physicsState.inFlight) {
@@ -389,6 +383,11 @@ function animate() {
 
   // Update UI displays
   updateShotPowerDisplay(physicsState.shotPower);
+  
+  // Auto-aim: calculate horizontal angle to nearest hoop
+  const targetHoop = getNearestHoop(basketball.position, leftHoop, rightHoop);
+  physicsState.horizontalAngle = calculateAutoAimHorizontalAngle(basketball.position, targetHoop);
+  
   updateAngleDisplays(physicsState.verticalAngle, physicsState.horizontalAngle);
   updateScoreUI(scoringState);
   
@@ -398,7 +397,6 @@ function animate() {
   
   // Show trajectory when not in flight
   if (!physicsState.inFlight) {
-    const targetHoop = getNearestHoop(basketball.position, leftHoop, rightHoop);
     physicsState.trajectoryLine = showTrajectory(scene, basketball.position, targetHoop, physicsState.shotPower, physicsState.verticalAngle, physicsState.horizontalAngle, physicsState.trajectoryLine);
   } else {
     physicsState.trajectoryLine = hideTrajectory(scene, physicsState.trajectoryLine);
