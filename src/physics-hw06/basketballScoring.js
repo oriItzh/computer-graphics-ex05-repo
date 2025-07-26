@@ -38,12 +38,22 @@ export function clearStatusMessage() {
   setStatusMessage('');
 }
 
+export function updateShotTypeDisplay(shotType) {
+  const shotTypeEl = document.getElementById('shot-type-indicator');
+  if (shotTypeEl) {
+    shotTypeEl.textContent = `Shot Type: ${shotType}`;
+    // Color-code the shot type
+    shotTypeEl.style.color = shotType === '3-POINT' ? '#FFD700' : '#87CEEB';
+  }
+}
+
 export function recordShotMade(scoringState, points = 2) {
   scoringState.score += points;
   scoringState.shotsMade++;
   scoringState.lastShotMade = true;
   scoringState.shotInProgress = true;
-  setStatusMessage('SHOT MADE!', '#00FF00');
+  const shotType = points === 3 ? '3-POINT' : '2-POINT';
+  setStatusMessage(`${shotType} SHOT MADE!`, '#00FF00');
   updateScoreUI(scoringState);
 }
 

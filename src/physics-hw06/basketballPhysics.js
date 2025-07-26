@@ -28,7 +28,8 @@ export function createPhysicsState() {
     ballRotationAxis: new THREE.Vector3(1, 0, 0),
     ballRotationSpeed: 0,
     prevBallPos: new THREE.Vector3(0, 0, 0),
-    trajectoryLine: null
+    trajectoryLine: null,
+    shotPosition: new THREE.Vector3(0, 0, 0) // Position where the shot was taken from
   };
 }
 

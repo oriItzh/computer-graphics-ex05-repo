@@ -2,24 +2,24 @@ export function createUI() {
   const scoreContainer = document.createElement('div');
   scoreContainer.style.position = 'absolute';
   scoreContainer.style.top = '20px';
-  scoreContainer.style.left = '50%';
-  scoreContainer.style.transform = 'translateX(-50%)';
+  scoreContainer.style.right = '20px';
   scoreContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
   scoreContainer.style.color = 'white';
   scoreContainer.style.padding = '10px 20px';
   scoreContainer.style.borderRadius = '5px';
   scoreContainer.style.fontFamily = 'Arial, sans-serif';
-  scoreContainer.style.fontSize = '24px';
+  scoreContainer.style.fontSize = '18px';
   scoreContainer.style.fontWeight = 'bold';
   scoreContainer.innerHTML = `
     <div id="score">Score: 0</div>
     <div id="attempts">Attempts: 0</div>
     <div id="made">Shots Made: 0</div>
     <div id="accuracy">Accuracy: 0%</div>
-    <div id="shot-power-indicator" style="font-size:18px;margin-top:6px;">Shot Power: 50%</div>
-    <div id="vertical-angle-indicator" style="font-size:18px;margin-top:6px;">Vertical Angle: 50°</div>
-    <div id="horizontal-angle-indicator" style="font-size:18px;margin-top:6px;">Horizontal Angle: 0°</div>
-    <div id="status-message" style="font-size:20px;margin-top:10px;color:#FFD700;"></div>
+    <div id="shot-type-indicator" style="margin-top:8px;color:#FFD700;">Shot Type: 2-POINT</div>
+    <div id="shot-power-indicator" style="margin-top:6px;">Shot Power: 50%</div>
+    <div id="vertical-angle-indicator" style="margin-top:6px;">Vertical Angle: 50°</div>
+    <div id="horizontal-angle-indicator" style="margin-top:6px;">Horizontal Angle: 0°</div>
+    <div id="status-message" style="margin-top:10px;color:#FFD700;"></div>
   `;
   document.body.appendChild(scoreContainer);
 

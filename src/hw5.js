@@ -40,8 +40,10 @@ import {
   recordShotMade,
   recordShotAttempt,
   recordShotMissed,
-  resetScoring
+  resetScoring,
+  updateShotTypeDisplay
 } from './physics-hw06/basketballScoring.js';
+import { isThreePointShot, getShotTypeDisplay, getShotPoints } from './physics-hw06/threePointDetection.js';
 
 // Scene setup
 const scene = new THREE.Scene();
@@ -100,6 +102,7 @@ function resetBall() {
   updateShotPowerDisplay(physicsState.shotPower);
   updateAngleDisplays(physicsState.verticalAngle, physicsState.horizontalAngle);
   updateScoreUI(scoringState);
+  updateShotTypeDisplay(getShotTypeDisplay(basketball.position));
   clearStatusMessage();
   physicsState.trajectoryLine = hideTrajectory(scene, physicsState.trajectoryLine);
 }
@@ -131,13 +134,13 @@ function addScoringPlanesDebug(scene, COURT_LENGTH) {
   
   // Left hoop scoring plane
   const leftPlane = new THREE.Mesh(planeGeometry, planeMaterial);
-  leftPlane.position.set(-COURT_LENGTH/2 + BACKBOARD_THICKNESS + 0.1 + RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
+  leftPlane.position.set(-COURT_LENGTH/2 + BACKBOARD_THICKNESS + RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
   leftPlane.rotation.x = Math.PI / 2; // Make it horizontal
   scene.add(leftPlane);
   
   // Right hoop scoring plane
   const rightPlane = new THREE.Mesh(planeGeometry, planeMaterial);
-  rightPlane.position.set(COURT_LENGTH/2 - BACKBOARD_THICKNESS - RIM_RADIUS - 0.1, RIM_HEIGHT_ABOVE_GROUND, 0);
+  rightPlane.position.set(COURT_LENGTH/2 - BACKBOARD_THICKNESS - RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND, 0);
   rightPlane.rotation.x = Math.PI / 2; // Make it horizontal
   scene.add(rightPlane);
 }
@@ -303,6 +306,8 @@ function setupEventListeners() {
           const targetHoop = getNearestHoop(basketball.position, leftHoop, rightHoop);
           physicsState.ballVelocity = getShotInitialVelocity(basketball.position, targetHoop, physicsState.shotPower, physicsState.verticalAngle, physicsState.horizontalAngle);
           physicsState.inFlight = true;
+          // Store the shot position for scoring purposes
+          physicsState.shotPosition = basketball.position.clone();
           recordShotAttempt(scoringState);
           physicsState.trajectoryLine = hideTrajectory(scene, physicsState.trajectoryLine);
         }
@@ -350,7 +355,8 @@ function animate() {
     // Rim/hoop collision detection (scoring)
     let hoopPos = getNearestHoop(basketball.position, leftHoop, rightHoop);
     if (!scoringState.shotInProgress && isBallThroughHoop(basketball.position, physicsState.prevBallPos, hoopPos, RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND)) {
-      recordShotMade(scoringState);
+      const shotPoints = getShotPoints(physicsState.shotPosition); // Use shot position for scoring
+      recordShotMade(scoringState, shotPoints);
     }
     
     // Handle rim collisions
@@ -385,6 +391,10 @@ function animate() {
   updateShotPowerDisplay(physicsState.shotPower);
   updateAngleDisplays(physicsState.verticalAngle, physicsState.horizontalAngle);
   updateScoreUI(scoringState);
+  
+  // Update shot type indicator based on current ball position
+  const currentShotType = getShotTypeDisplay(basketball.position);
+  updateShotTypeDisplay(currentShotType);
   
   // Show trajectory when not in flight
   if (!physicsState.inFlight) {
