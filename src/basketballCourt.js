@@ -12,11 +12,6 @@ const RIM_TO_BACKBOARD_X = BACKBOARD_THICKNESS + RIM_RADIUS;
 const LINE_OFFSET = 0.04;
 const COURT_SHININESS = 0.2;
 
-// Export constants for 3-point line calculations
-export const THREE_POINT_ARC_RADIUS = 7.24;
-export const THREE_POINT_SIDE_Z = COURT_WIDTH / 2 - 0.91;
-export { COURT_LENGTH, COURT_WIDTH };
-
 // Global line material with increased width
 const LINE_WIDTH = 2;
 const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: LINE_WIDTH });
@@ -241,50 +236,4 @@ function addRestrictedAreas(scene) {
     ));
   }
   scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightRestrictedAreaPoints), lineMaterial));
-}
-
-// Function to check if a shot position is beyond the 3-point line
-export function isThreePointShot(ballPos, hoopPos) {
-  // Use the hoop position directly as the basket center
-  const basketCenterX = hoopPos.x;
-  const basketCenterZ = hoopPos.z; // Should be 0
-  
-  // Calculate distance from ball to basket center (in XZ plane only)
-  const dx = ballPos.x - basketCenterX;
-  const dz = ballPos.z - basketCenterZ;
-  const distanceToBasket = Math.sqrt(dx * dx + dz * dz);
-  
-  // Check if the ball is beyond the 3-point line
-  const absZ = Math.abs(ballPos.z);
-  
-  console.log('=== 3-Point Calculation ===');
-  console.log('Ball pos:', ballPos);
-  console.log('Hoop pos:', hoopPos);
-  console.log('Distance to basket:', distanceToBasket);
-  console.log('absZ:', absZ);
-  console.log('THREE_POINT_SIDE_Z:', THREE_POINT_SIDE_Z);
-  console.log('THREE_POINT_ARC_RADIUS:', THREE_POINT_ARC_RADIUS);
-  
-  if (absZ > THREE_POINT_SIDE_Z) {
-    // In the straight line section (corners)
-    // Calculate the X distance at which the straight line portion starts
-    const threePointXDistance = Math.sqrt(
-      THREE_POINT_ARC_RADIUS * THREE_POINT_ARC_RADIUS - THREE_POINT_SIDE_Z * THREE_POINT_SIDE_Z
-    );
-    
-    console.log('In straight line section');
-    console.log('threePointXDistance:', threePointXDistance);
-    console.log('Math.abs(dx):', Math.abs(dx));
-    
-    // Check if the ball is far enough from the basket in the X direction
-    const result = Math.abs(dx) > threePointXDistance;
-    console.log('Result:', result);
-    return result;
-  } else {
-    // In the arc section - simply check if distance is greater than arc radius
-    console.log('In arc section');
-    const result = distanceToBasket > THREE_POINT_ARC_RADIUS;
-    console.log('Result:', result);
-    return result;
-  }
 }
