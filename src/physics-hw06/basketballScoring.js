@@ -1,6 +1,8 @@
 // Basketball scoring and statistics management for HW06
 // Handles score tracking, shot attempts, and status messages
 
+import { playScoringSound } from './basketballSounds.js';
+
 // --- Scoring State ---
 export function createScoringState() {
   return {
@@ -55,6 +57,9 @@ export function recordShotMade(scoringState, points = 2) {
   const shotType = points === 3 ? '3-POINT' : '2-POINT';
   setStatusMessage(`${shotType} SHOT MADE!`, '#00FF00');
   updateScoreUI(scoringState);
+  
+  // Play random crowd cheering sound for 3 seconds
+  playScoringSound();
 }
 
 export function recordShotAttempt(scoringState) {

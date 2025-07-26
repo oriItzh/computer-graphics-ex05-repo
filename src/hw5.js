@@ -45,6 +45,7 @@ import {
   updateShotTypeDisplay
 } from './physics-hw06/basketballScoring.js';
 import { isThreePointShot, getShotTypeDisplay, getShotPoints } from './physics-hw06/threePointDetection.js';
+import { initializeSoundSystem, setSoundVolume, enableAudioAfterUserInteraction, testSound } from './physics-hw06/basketballSounds.js';
 
 // Scene setup
 const scene = new THREE.Scene();
@@ -84,6 +85,9 @@ createBasketballHoops(scene, COURT_LENGTH);
 // courtLightGroup = createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH);
 // drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
 createUI();
+
+// Initialize sound system for scoring effects
+initializeSoundSystem();
 
 // Basketball movement state (Phase 1)
 const moveState = createMovementState();
@@ -198,6 +202,18 @@ function setupEventListeners() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
+  // Enable audio on mouse click
+  document.addEventListener('click', () => {
+    enableAudioAfterUserInteraction();
+  });
+
+  // Sound volume control
+  window.lightControls.soundVolumeSlider.addEventListener('input', (e) => {
+    const value = parseFloat(e.target.value);
+    window.lightControls.soundVolumeValue.textContent = value.toFixed(1);
+    setSoundVolume(value);
+  });
+
   // Main light intensity control
   window.lightControls.mainLightSlider.addEventListener('input', (e) => {
     const value = parseFloat(e.target.value);
@@ -223,6 +239,9 @@ function setupEventListeners() {
 
   // Keyboard controls
   document.addEventListener('keydown', (e) => {
+    // Enable audio after first user interaction
+    enableAudioAfterUserInteraction();
+    
     switch(e.key.toLowerCase()) {
       case 'o':
         isOrbitEnabled = !isOrbitEnabled;
@@ -309,6 +328,11 @@ function setupEventListeners() {
       case 'r':
         resetBall();
         clearStatusMessage();
+        break;
+      case 't':
+        // Test sound (T key)
+        console.log('Testing sound manually...');
+        testSound(0);
         break;
     }
   });

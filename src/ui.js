@@ -47,6 +47,7 @@ export function createUI() {
     <p style="margin: 5px 0; color: #FFD700">Auto-aim at nearest hoop</p>
     <p style="margin: 5px 0">Spacebar - Shoot</p>
     <p style="margin: 5px 0">R - Reset ball position</p>
+    <p style="margin: 5px 0; color: #87CEEB">T - Test sound</p>
   `;
   document.body.appendChild(controlsContainer);
 
@@ -63,7 +64,12 @@ export function createUI() {
   lightControlsContainer.style.fontSize = '14px';
   lightControlsContainer.style.width = '200px';
   lightControlsContainer.innerHTML = `
-    <h3 style="margin: 0 0 10px 0">Light Controls:</h3>
+    <h3 style="margin: 0 0 10px 0">Audio & Light Controls:</h3>
+    <div style="margin-bottom: 10px">
+      <label for="soundVolume" style="display: block; margin-bottom: 5px">Sound Volume:</label>
+      <input type="range" id="soundVolume" min="0" max="1" step="0.1" value="0.6" style="width: 100%">
+      <span id="soundVolumeValue" style="float: right">0.6</span>
+    </div>
     <div style="margin-bottom: 10px">
       <label for="mainLightIntensity" style="display: block; margin-bottom: 5px">Main Light Intensity:</label>
       <input type="range" id="mainLightIntensity" min="0" max="1" step="0.1" value="0.7" style="width: 100%">
@@ -78,15 +84,19 @@ export function createUI() {
   document.body.appendChild(lightControlsContainer);
 
   // Add event listeners for the sliders
+  const soundVolumeSlider = document.getElementById('soundVolume');
   const mainLightSlider = document.getElementById('mainLightIntensity');
   const courtLightSlider = document.getElementById('courtLightIntensity');
+  const soundVolumeValue = document.getElementById('soundVolumeValue');
   const mainLightValue = document.getElementById('mainLightValue');
   const courtLightValue = document.getElementById('courtLightValue');
 
   // Store the elements in the window object so they can be accessed from hw5.js
   window.lightControls = {
+    soundVolumeSlider,
     mainLightSlider,
     courtLightSlider,
+    soundVolumeValue,
     mainLightValue,
     courtLightValue
   };
