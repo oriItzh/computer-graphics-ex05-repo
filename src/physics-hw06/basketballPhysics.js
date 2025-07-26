@@ -100,7 +100,6 @@ export function isBallThroughHoop(ballPos, prevBallPos, hoopPos, RIM_RADIUS, RIM
   // Define the circular plane at rim height
   const rimY = RIM_HEIGHT_ABOVE_GROUND;
   const rimCenter = new THREE.Vector3(hoopPos.x, rimY, hoopPos.z);
-  const planeNormal = new THREE.Vector3(0, 1, 0); // pointing up
   
   // Check if ball crossed the plane from above to below
   const wasAbove = prevBallPos.y > rimY;
@@ -110,14 +109,25 @@ export function isBallThroughHoop(ballPos, prevBallPos, hoopPos, RIM_RADIUS, RIM
     return false; // Ball didn't cross the plane from above
   }
   
-  // Find the intersection point where the ball trajectory crosses the rim plane
+  // Improved intersection calculation with safety checks
   const trajectory = new THREE.Vector3().subVectors(ballPos, prevBallPos);
+  
+  // Avoid division by zero or very small values
+  if (Math.abs(trajectory.y) < 0.001) {
+    return false;
+  }
+  
   const t = (rimY - prevBallPos.y) / trajectory.y;
+  
+  // Ensure t is within valid range [0, 1]
+  if (t < 0 || t > 1) {
+    return false;
+  }
   
   // Calculate the exact intersection point on the rim plane
   const intersectionPoint = new THREE.Vector3().addVectors(
     prevBallPos,
-    trajectory.multiplyScalar(t)
+    trajectory.clone().multiplyScalar(t)
   );
   
   // Check if the intersection point is within the circular rim
@@ -126,9 +136,53 @@ export function isBallThroughHoop(ballPos, prevBallPos, hoopPos, RIM_RADIUS, RIM
     intersectionPoint.z - rimCenter.z
   ).length();
   
-  // Ball scores if it passes through the circular opening (accounting for ball radius)
-  const effectiveRimRadius = (RIM_RADIUS - BALL_RADIUS * 0.8) * 1.5; // Increased by factor of 1.5
+  // More generous scoring radius for clean shots (swooshes)
+  // Allow for ball center to be within the rim radius (not accounting for ball radius)
+  const effectiveRimRadius = RIM_RADIUS * 0.85; // More forgiving for clean shots
   return distanceFromRimCenter <= effectiveRimRadius;
+}
+
+// Enhanced scoring detection that checks multiple points along the ball's path
+export function isBallThroughHoopEnhanced(ballPos, prevBallPos, hoopPos, RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND) {
+  // Primary detection - use the improved main function
+  if (isBallThroughHoop(ballPos, prevBallPos, hoopPos, RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND)) {
+    console.log("Shot detected by primary method (clean trajectory)");
+    return true;
+  }
+  
+  // Secondary detection - check multiple points along trajectory for fast-moving balls
+  const rimY = RIM_HEIGHT_ABOVE_GROUND;
+  const trajectory = new THREE.Vector3().subVectors(ballPos, prevBallPos);
+  const stepCount = 5; // Check 5 intermediate points
+  
+  for (let i = 1; i <= stepCount; i++) {
+    const t = i / stepCount;
+    const checkPoint = new THREE.Vector3().addVectors(
+      prevBallPos,
+      trajectory.clone().multiplyScalar(t)
+    );
+    
+    // Check if this point crosses the rim plane
+    const prevPoint = new THREE.Vector3().addVectors(
+      prevBallPos,
+      trajectory.clone().multiplyScalar((i - 1) / stepCount)
+    );
+    
+    if (prevPoint.y > rimY && checkPoint.y <= rimY) {
+      // Found a crossing, check if it's within the rim
+      const distanceFromRimCenter = new THREE.Vector2(
+        checkPoint.x - hoopPos.x,
+        checkPoint.z - hoopPos.z
+      ).length();
+      
+      if (distanceFromRimCenter <= RIM_RADIUS * 0.85) {
+        console.log("Shot detected by secondary method (multi-point check)");
+        return true;
+      }
+    }
+  }
+  
+  return false;
 }
 
 export function handleBallRimCollision(ball, velocity, rimColliders, RIM_COLLIDER_RADIUS) {

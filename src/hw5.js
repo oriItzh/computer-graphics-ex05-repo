@@ -14,6 +14,7 @@ import {
   updateBallPhysics, 
   updateBallRotation,
   isBallThroughHoop,
+  isBallThroughHoopEnhanced,
   handleBallRimCollision,
   showTrajectory,
   hideTrajectory,
@@ -370,9 +371,9 @@ function animate() {
     // Physics update
     const result = updateBallPhysics(basketball, physicsState, delta, boundaries);
     
-    // Rim/hoop collision detection (scoring)
+    // Enhanced rim/hoop collision detection (scoring) - better detection for clean shots
     let hoopPos = getNearestHoop(basketball.position, leftHoop, rightHoop);
-    if (!scoringState.shotInProgress && isBallThroughHoop(basketball.position, physicsState.prevBallPos, hoopPos, RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND)) {
+    if (!scoringState.shotInProgress && isBallThroughHoopEnhanced(basketball.position, physicsState.prevBallPos, hoopPos, RIM_RADIUS, RIM_HEIGHT_ABOVE_GROUND)) {
       const shotPoints = getShotPoints(physicsState.shotPosition); // Use shot position for scoring
       recordShotMade(scoringState, shotPoints);
     }
