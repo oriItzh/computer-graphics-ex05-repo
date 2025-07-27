@@ -69,10 +69,6 @@ const gameManager = new GameManager(scene, basketball, COURT_LENGTH, COURT_WIDTH
 const controls = new OrbitControls(camera, renderer.domElement);
 cameraSystem.setControls(controls);
 
-// Set up debug visualization for rim colliders
-console.log('Adding rim collider debug spheres...');
-collisionSystem.addRimCollidersDebug(scene, COURT_LENGTH);
-
 // Initialize game manager with all systems
 gameManager.initializeSystems(physicsSystem, shootingSystem, scoringSystem, collisionSystem, soundSystem, cameraSystem);
 

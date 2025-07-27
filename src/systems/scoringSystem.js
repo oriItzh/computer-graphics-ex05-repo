@@ -110,7 +110,7 @@ export class ScoringSystem {
   showSwooshMessage() {
     // Create a big swoosh message
     const swooshEl = document.createElement('div');
-    swooshEl.textContent = 'SWOOSH!';
+    swooshEl.textContent = 'SWOOOOOSH!';
     swooshEl.style.position = 'fixed';
     swooshEl.style.top = '40%';
     swooshEl.style.left = '50%';
@@ -152,7 +152,7 @@ export class ScoringSystem {
   showComboMessage(hits, extraPoints) {
     // Create combo message
     const comboEl = document.createElement('div');
-    comboEl.textContent = `COMBO x${hits} - +${extraPoints} BONUS!`;
+    comboEl.textContent = `COMBO x${hits} +${extraPoints} BONUS!`;
     comboEl.style.position = 'fixed';
     comboEl.style.top = '55%';
     comboEl.style.left = '50%';
@@ -164,6 +164,7 @@ export class ScoringSystem {
     comboEl.style.fontFamily = 'Arial, sans-serif';
     comboEl.style.zIndex = '1000';
     comboEl.style.pointerEvents = 'none';
+    comboEl.style.whiteSpace = 'nowrap'; // Ensure single line display
     comboEl.style.animation = 'comboAnimation 2.5s ease-in-out';
     
     // Add CSS animation for combo if not already added

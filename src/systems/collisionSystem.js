@@ -149,23 +149,4 @@ export class CollisionSystem {
       }
     }
   }
-
-  // Debug visualization
-  addRimCollidersDebug(scene, COURT_LENGTH) {
-    if (!this.rimColliders) return;
-    
-    const mat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.8 });
-    for (const pos of this.rimColliders.left) {
-      const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 12), mat);
-      mesh.position.copy(pos);
-      scene.add(mesh);
-    }
-    
-    const matRight = new THREE.MeshBasicMaterial({ color: 0x0000ff, transparent: true, opacity: 0.8 });
-    for (const pos of this.rimColliders.right) {
-      const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 12), matRight);
-      mesh.position.copy(pos);
-      scene.add(mesh);
-    }
-  }
 }
