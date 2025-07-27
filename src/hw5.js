@@ -114,6 +114,38 @@ let lastShotMade = false;
 let shotInProgress = false;
 let shotStartPosition = null; // Track where the shot was taken from
 
+// --- Sound effects ---
+const crowdCheeringSounds = [];
+let soundsLoaded = false;
+
+function loadSounds() {
+  // Load the 3 crowd cheering sounds
+  for (let i = 1; i <= 3; i++) {
+    const audio = new Audio(`./src/sounds/crowd-cheering${i}.mp3`);
+    audio.preload = 'auto';
+    audio.volume = 0.5; // Set volume to 50%
+    crowdCheeringSounds.push(audio);
+  }
+  soundsLoaded = true;
+}
+
+function playRandomCheerSound() {
+  if (soundsLoaded && crowdCheeringSounds.length > 0) {
+    // Pick a random cheering sound from the 3 available
+    const randomIndex = Math.floor(Math.random() * crowdCheeringSounds.length);
+    const sound = crowdCheeringSounds[randomIndex];
+    
+    // Reset the sound to beginning and play
+    sound.currentTime = 0;
+    sound.play().catch(error => {
+      console.log('Could not play sound:', error);
+    });
+  }
+}
+
+// Load sounds when the game starts
+loadSounds();
+
 function updateScoreUI() {
   const scoreEl = document.getElementById('score');
   const attemptsEl = document.getElementById('attempts');
@@ -577,6 +609,9 @@ function animate() {
       setStatusMessage(`${points}-POINT SHOT MADE!`, '#00FF00');
       updateScoreUI();
       shotInProgress = true;
+      
+      // Play random crowd cheering sound
+      playRandomCheerSound();
     }
     // Ground collision
     const groundY = BALL_RADIUS + BALL_GROUND_OFFSET;
