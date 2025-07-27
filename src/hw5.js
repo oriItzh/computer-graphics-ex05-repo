@@ -43,9 +43,9 @@ const COURT_WIDTH = 15.4;
 const basketball = createBasketball(scene);
 createBasketballCourt(scene);
 createBasketballHoops(scene, COURT_LENGTH);
-// createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH);
-// courtLightGroup = createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH);
-// drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
+createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH);
+// courtLightGroup = createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH); // Keep this commented for now
+drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
 createUI();
 
 // Basketball movement state (Phase 1)
@@ -329,8 +329,8 @@ function hideTrajectory() {
 }
 
 // --- Rim collider setup ---
-const NUM_RIM_COLLIDERS = 32;
-const RIM_COLLIDER_RADIUS = 0.018; // slightly less than rim tube radius
+const NUM_RIM_COLLIDERS = 48; // Increased from 32 for better collision coverage
+const RIM_COLLIDER_RADIUS = 0.022; // Slightly increased for better collision detection
 const rimColliders = getRimColliderPositions(COURT_LENGTH, NUM_RIM_COLLIDERS);
 
 // --- DEBUG: Visualize rim colliders ---
@@ -377,22 +377,62 @@ function getActiveRimColliders(ballPos) {
 
 function handleBallRimCollision(ball, velocity) {
   const colliders = getActiveRimColliders(ball.position);
+  
   for (const c of colliders) {
     const dist = ball.position.distanceTo(c);
-    if (dist < (RIM_COLLIDER_RADIUS + BALL_RADIUS)) {
+    const collisionDistance = RIM_COLLIDER_RADIUS + BALL_RADIUS;
+    
+    if (dist < collisionDistance) {
       // Move ball out of collider
       const dir = ball.position.clone().sub(c).normalize();
-      ball.position.copy(c.clone().add(dir.multiplyScalar(RIM_COLLIDER_RADIUS + BALL_RADIUS + 0.001)));
-      // Reflect velocity
+      ball.position.copy(c.clone().add(dir.multiplyScalar(collisionDistance + 0.01)));
+      
+      // Calculate reflection
       const vDotN = velocity.dot(dir);
       if (vDotN < 0) {
         // Only reflect if moving toward collider
         velocity.add(dir.multiplyScalar(-2 * vDotN));
-        // Apply energy loss
-        velocity.multiplyScalar(0.7);
+        // Apply energy loss and make it more realistic
+        velocity.multiplyScalar(0.6); // More energy loss for rim collisions
       }
+      
       // Only handle one collision per frame for stability
       break;
+    }
+  }
+  
+  // Additional continuous collision detection for fast-moving ball
+  if (velocity.length() > 8) { // Only for high-speed shots
+    const prevPos = ball.position.clone().sub(velocity.clone().multiplyScalar(0.016)); // Approximate previous position
+    
+    for (const c of colliders) {
+      // Check if the ball trajectory intersected with any rim collider
+      const lineStart = prevPos;
+      const lineEnd = ball.position;
+      const lineDir = lineEnd.clone().sub(lineStart).normalize();
+      const lineLength = lineStart.distanceTo(lineEnd);
+      
+      // Find closest point on line to rim collider center
+      const toCollider = c.clone().sub(lineStart);
+      const projectionLength = Math.max(0, Math.min(lineLength, toCollider.dot(lineDir)));
+      const closestPoint = lineStart.clone().add(lineDir.multiplyScalar(projectionLength));
+      const distToLine = c.distanceTo(closestPoint);
+      
+      if (distToLine < (RIM_COLLIDER_RADIUS + BALL_RADIUS)) {
+        // Collision detected along trajectory
+        const collisionPoint = closestPoint;
+        const dir = collisionPoint.clone().sub(c).normalize();
+        
+        // Move ball to collision point and reflect
+        ball.position.copy(c.clone().add(dir.multiplyScalar(RIM_COLLIDER_RADIUS + BALL_RADIUS + 0.01)));
+        
+        const vDotN = velocity.dot(dir);
+        if (vDotN < 0) {
+          velocity.add(dir.multiplyScalar(-2 * vDotN));
+          velocity.multiplyScalar(0.5); // Significant energy loss for trajectory collisions
+        }
+        break;
+      }
     }
   }
 }
