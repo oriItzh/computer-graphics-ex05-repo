@@ -17,11 +17,16 @@ import { SoundSystem } from './systems/soundSystem.js';
 import { CameraSystem } from './systems/cameraSystem.js';
 import { GameManager } from './systems/gameManager.js';
 
-// Scene setup
+// Scene setup with performance optimizations
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ 
+  antialias: true,
+  powerPreference: "high-performance"
+});
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Better performance than PCFShadowMap
 document.body.appendChild(renderer.domElement);
 scene.background = new THREE.Color(0x000000);
 
@@ -36,7 +41,11 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
 directionalLight.position.set(10, 20, 15);
 scene.add(directionalLight);
 renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Better performance than PCFShadowMap
 directionalLight.castShadow = true;
+
+// Performance optimizations
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
 
 // Light state tracking
 let isMainLightOn = true;
@@ -51,9 +60,9 @@ const COURT_WIDTH = 15.4;
 const basketball = createBasketball(scene);
 createBasketballCourt(scene);
 createBasketballHoops(scene, COURT_LENGTH);
-// createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH);
+createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH);
 // courtLightGroup = createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH); // Keep this commented for now
-// drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
+drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
 createUI();
 
 // Initialize game systems
@@ -192,36 +201,76 @@ function setupEventListeners() {
   document.addEventListener('keyup', (e) => handleBasketballMovementKey(e, false));
 }
 
-// Main animation loop
+// Main animation loop with fixed timestep physics
 let lastTime = performance.now();
+const FIXED_TIMESTEP = 1/60; // 60 FPS for physics
+const MAX_DELTA = 1/30; // Cap delta to prevent large jumps
+let accumulator = 0;
+
+// Performance monitoring
+let frameCount = 0;
+let lastFPSTime = performance.now();
+let currentFPS = 60;
 
 function animate() {
   requestAnimationFrame(animate);
 
   const now = performance.now();
-  const delta = (now - lastTime) / 1000; // seconds
+  let frameTime = (now - lastTime) / 1000; // seconds
   lastTime = now;
-
-  // Handle ball physics and movement when not in flight
-  if (!physicsSystem.isInFlight()) {
-    updateBasketballPosition(basketball, moveState, delta, boundaries);
-    // Ball rotation for rolling
-    let moveVec = new THREE.Vector3(0,0,0);
-    if (moveState.left) moveVec.x -= 1;
-    if (moveState.right) moveVec.x += 1;
-    if (moveState.up) moveVec.z -= 1;
-    if (moveState.down) moveVec.z += 1;
-    if (moveVec.lengthSq() > 0) {
-      moveVec.normalize().multiplyScalar(6); // match BALL_MOVE_SPEED
-      physicsSystem.updateBallRotation(moveVec, delta, basketball);
+  
+  // Calculate FPS for monitoring
+  frameCount++;
+  if (now - lastFPSTime >= 1000) {
+    currentFPS = Math.round((frameCount * 1000) / (now - lastFPSTime));
+    frameCount = 0;
+    lastFPSTime = now;
+    
+    // Log performance warnings
+    if (currentFPS < 45) {
+      console.warn(`Low FPS detected: ${currentFPS}fps - Physics may be affected`);
     }
   }
+  
+  // Cap frame time to prevent physics instability
+  frameTime = Math.min(frameTime, MAX_DELTA);
+  accumulator += frameTime;
 
-  // Update all game systems
-  gameManager.update(moveState, boundaries, delta);
+  // Fixed timestep physics updates
+  while (accumulator >= FIXED_TIMESTEP) {
+    // Handle ball physics and movement when not in flight
+    if (!physicsSystem.isInFlight()) {
+      updateBasketballPosition(basketball, moveState, FIXED_TIMESTEP, boundaries);
+      // Ball rotation for rolling
+      let moveVec = new THREE.Vector3(0,0,0);
+      if (moveState.left) moveVec.x -= 1;
+      if (moveState.right) moveVec.x += 1;
+      if (moveState.up) moveVec.z -= 1;
+      if (moveState.down) moveVec.z += 1;
+      if (moveVec.lengthSq() > 0) {
+        moveVec.normalize().multiplyScalar(6); // match BALL_MOVE_SPEED
+        physicsSystem.updateBallRotation(moveVec, FIXED_TIMESTEP, basketball);
+      }
+    }
 
-  renderer.render(scene, camera);
+    // Update all game systems with fixed timestep
+    gameManager.update(moveState, boundaries, FIXED_TIMESTEP);
+    
+    accumulator -= FIXED_TIMESTEP;
+  }
+
+  // Limit expensive operations when FPS is low
+  if (currentFPS > 45) {
+    renderer.render(scene, camera);
+  } else {
+    // Reduce rendering quality when performance is poor
+    const oldPixelRatio = renderer.getPixelRatio();
+    renderer.setPixelRatio(Math.min(oldPixelRatio, 1));
+    renderer.render(scene, camera);
+    renderer.setPixelRatio(oldPixelRatio);
+  }
 }
+
+// Initialize the application
 setupEventListeners();
 animate();
-

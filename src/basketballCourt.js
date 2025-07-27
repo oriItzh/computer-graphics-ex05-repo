@@ -245,9 +245,27 @@ function addRestrictedAreas(scene) {
 
 // Function to check if a shot position is beyond the 3-point line
 export function isThreePointShot(ballPos, hoopPos) {
-  // Use the hoop position directly as the basket center
-  const basketCenterX = hoopPos.x;
-  const basketCenterZ = hoopPos.z; // Should be 0
+  // Use the EXACT same constants and calculations as addThreePointLines()
+  const threePointArcRadius = 7.24;
+  const threePointSideZ = COURT_WIDTH / 2 - 0.91;
+  const courtHalfLength = COURT_LENGTH / 2;
+  const X_OFFSET = 1;
+  const threePointXOffsetFromBasket = Math.sqrt(
+    threePointArcRadius * threePointArcRadius - threePointSideZ * threePointSideZ
+  );
+  
+  let basketCenterX, basketCenterZ;
+  
+  if (hoopPos.x < 0) {
+    // Left hoop - matches leftBasketCenterX calculation
+    const leftHoopX = -courtHalfLength;
+    basketCenterX = leftHoopX + RIM_TO_BACKBOARD_X + X_OFFSET;
+  } else {
+    // Right hoop - matches rightBasketCenterX calculation
+    const rightHoopX = courtHalfLength;
+    basketCenterX = rightHoopX - RIM_TO_BACKBOARD_X - X_OFFSET;
+  }
+  basketCenterZ = hoopPos.z; // Should be 0
   
   // Calculate distance from ball to basket center (in XZ plane only)
   const dx = ballPos.x - basketCenterX;
@@ -257,34 +275,36 @@ export function isThreePointShot(ballPos, hoopPos) {
   // Check if the ball is beyond the 3-point line
   const absZ = Math.abs(ballPos.z);
   
-  console.log('=== 3-Point Calculation ===');
+  console.log('=== 3-Point Calculation (Corrected Logic) ===');
   console.log('Ball pos:', ballPos);
   console.log('Hoop pos:', hoopPos);
+  console.log('Actual basket center X:', basketCenterX);
+  console.log('threePointArcRadius:', threePointArcRadius);
+  console.log('threePointSideZ:', threePointSideZ);
+  console.log('threePointXOffsetFromBasket:', threePointXOffsetFromBasket);
   console.log('Distance to basket:', distanceToBasket);
   console.log('absZ:', absZ);
-  console.log('THREE_POINT_SIDE_Z:', THREE_POINT_SIDE_Z);
-  console.log('THREE_POINT_ARC_RADIUS:', THREE_POINT_ARC_RADIUS);
+  console.log('Math.abs(dx):', Math.abs(dx));
   
-  if (absZ > THREE_POINT_SIDE_Z) {
-    // In the straight line section (corners)
-    // Calculate the X distance at which the straight line portion starts
-    const threePointXDistance = Math.sqrt(
-      THREE_POINT_ARC_RADIUS * THREE_POINT_ARC_RADIUS - THREE_POINT_SIDE_Z * THREE_POINT_SIDE_Z
-    );
-    
-    console.log('In straight line section');
-    console.log('threePointXDistance:', threePointXDistance);
-    console.log('Math.abs(dx):', Math.abs(dx));
-    
-    // Check if the ball is far enough from the basket in the X direction
-    const result = Math.abs(dx) > threePointXDistance;
-    console.log('Result:', result);
+  // Check if we're in the straight-line rectangle area (red rectangles in the image)
+  // This happens when we're FAR from center (high |x|) AND beyond the arc transition
+  if (Math.abs(dx) > threePointXOffsetFromBasket && absZ > threePointSideZ) {
+    // In the straight-line rectangle area - calculate purely based on Z value
+    console.log('In straight-line rectangle area - checking Z coordinate only');
+    const result = absZ > threePointSideZ;
+    console.log('Rectangle Z-only result:', result);
+    return result;
+  } else if (absZ > threePointSideZ) {
+    // In the corner transition area but not far enough in X - still in transition
+    console.log('In corner transition area');
+    const result = Math.abs(dx) > threePointXOffsetFromBasket;
+    console.log('Corner result:', result);
     return result;
   } else {
-    // In the arc section - simply check if distance is greater than arc radius
-    console.log('In arc section');
-    const result = distanceToBasket > THREE_POINT_ARC_RADIUS;
-    console.log('Result:', result);
+    // In the arc section (lower |x| values) - use circular distance calculation
+    console.log('In arc section - using circular distance calculation');
+    const result = distanceToBasket > threePointArcRadius;
+    console.log('Arc result:', result);
     return result;
   }
 }
