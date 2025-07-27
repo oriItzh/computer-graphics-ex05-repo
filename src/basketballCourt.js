@@ -275,36 +275,16 @@ export function isThreePointShot(ballPos, hoopPos) {
   // Check if the ball is beyond the 3-point line
   const absZ = Math.abs(ballPos.z);
   
-  console.log('=== 3-Point Calculation (Corrected Logic) ===');
-  console.log('Ball pos:', ballPos);
-  console.log('Hoop pos:', hoopPos);
-  console.log('Actual basket center X:', basketCenterX);
-  console.log('threePointArcRadius:', threePointArcRadius);
-  console.log('threePointSideZ:', threePointSideZ);
-  console.log('threePointXOffsetFromBasket:', threePointXOffsetFromBasket);
-  console.log('Distance to basket:', distanceToBasket);
-  console.log('absZ:', absZ);
-  console.log('Math.abs(dx):', Math.abs(dx));
-  
-  // Check if we're in the straight-line rectangle area (red rectangles in the image)
-  // This happens when we're FAR from center (high |x|) AND beyond the arc transition
+  // Check if we're in the straight-line rectangle area (corners)
+  // This happens when we're far from center (high |x|) AND beyond the arc transition
   if (Math.abs(dx) > threePointXOffsetFromBasket && absZ > threePointSideZ) {
     // In the straight-line rectangle area - calculate purely based on Z value
-    console.log('In straight-line rectangle area - checking Z coordinate only');
-    const result = absZ > threePointSideZ;
-    console.log('Rectangle Z-only result:', result);
-    return result;
+    return absZ > threePointSideZ;
   } else if (absZ > threePointSideZ) {
     // In the corner transition area but not far enough in X - still in transition
-    console.log('In corner transition area');
-    const result = Math.abs(dx) > threePointXOffsetFromBasket;
-    console.log('Corner result:', result);
-    return result;
+    return Math.abs(dx) > threePointXOffsetFromBasket;
   } else {
     // In the arc section (lower |x| values) - use circular distance calculation
-    console.log('In arc section - using circular distance calculation');
-    const result = distanceToBasket > threePointArcRadius;
-    console.log('Arc result:', result);
-    return result;
+    return distanceToBasket > threePointArcRadius;
   }
 }

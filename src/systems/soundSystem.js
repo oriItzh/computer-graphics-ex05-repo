@@ -1,4 +1,7 @@
-// Sound effects system
+/**
+ * Sound effects system
+ * Manages audio playback for game events including scoring, missing, and special effects
+ */
 export class SoundSystem {
   constructor() {
     this.crowdCheeringSounds = [];
@@ -49,7 +52,7 @@ export class SoundSystem {
       // Reset the sound to beginning and play
       sound.currentTime = 0;
       sound.play().catch(error => {
-        console.log('Could not play sound:', error);
+        // Silently handle audio playback failures (browser autoplay policies)
       });
     }
   }
@@ -71,7 +74,7 @@ export class SoundSystem {
     // Reset the sound to beginning and play
     sound.currentTime = 0;
     sound.play().catch(error => {
-      console.log('Could not play disappointment sound:', error);
+      // Silently handle audio playback failures (browser autoplay policies)
     });
   }
 
@@ -85,7 +88,7 @@ export class SoundSystem {
       // Play rak-reshet sound
       this.rakReshetSound.currentTime = 0;
       this.rakReshetSound.play().catch(error => {
-        console.log('Could not play rak-reshet sound:', error);
+        // Silently handle audio playback failures
       });
     } else {
       // Play regular cheering sound
@@ -98,7 +101,7 @@ export class SoundSystem {
       // Play rhythmic cheering for special milestone
       this.rhythmicCheeringSound.currentTime = 0;
       this.rhythmicCheeringSound.play().catch(error => {
-        console.log('Could not play rhythmic cheering sound:', error);
+        // Silently handle audio playback failures
       });
     }
   }

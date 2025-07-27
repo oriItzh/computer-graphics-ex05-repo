@@ -3,9 +3,6 @@ import { createBasketballCourt } from './basketballCourt.js';
 import { createBasketballHoops } from './basketballHoops.js';
 import { createBasketball } from './basketball.js';
 import { createUI } from './ui.js';
-import { createStadiumStands } from './seats.js';
-import { createCourtLighting } from './courtLights.js';
-import { drawScoreboards } from './scoreboard.js';
 import { createMovementState, handleMovementKey, updateBasketballPosition, getCourtBoundaries } from './physics-hw06/basketballMovement.js';
 
 // Import all game systems
@@ -16,6 +13,11 @@ import { CollisionSystem } from './systems/collisionSystem.js';
 import { SoundSystem } from './systems/soundSystem.js';
 import { CameraSystem } from './systems/cameraSystem.js';
 import { GameManager } from './systems/gameManager.js';
+
+/**
+ * Three.js Basketball Game Main Application
+ * Initializes scene, lighting, game systems and handles the main game loop
+ */
 
 // Scene setup with performance optimizations
 const scene = new THREE.Scene();
@@ -30,19 +32,13 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Better performance than PCF
 document.body.appendChild(renderer.domElement);
 scene.background = new THREE.Color(0x000000);
 
-// Debug helper - uncomment to visualize axes
-// const axesHelper = new THREE.AxesHelper(15);
-// scene.add(axesHelper);
-
 // Scene lighting setup
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
 scene.add(ambientLight);
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
 directionalLight.position.set(10, 20, 15);
-scene.add(directionalLight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Better performance than PCFShadowMap
 directionalLight.castShadow = true;
+scene.add(directionalLight);
 
 // Performance optimizations
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
@@ -60,9 +56,6 @@ const COURT_WIDTH = 15.4;
 const basketball = createBasketball(scene);
 createBasketballCourt(scene);
 createBasketballHoops(scene, COURT_LENGTH);
-createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH);
-// courtLightGroup = createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH); // Keep this commented for now
-drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
 createUI();
 
 // Initialize game systems
@@ -85,14 +78,10 @@ gameManager.initializeSystems(physicsSystem, shootingSystem, scoringSystem, coll
 const moveState = createMovementState();
 const boundaries = getCourtBoundaries(COURT_LENGTH, COURT_WIDTH);
 
-// Hoop positions (NBA standard, see basketballHoops.js)
-function getNearestHoop(pos) {
-  // This functionality is now handled by CollisionSystem
-  return collisionSystem.getNearestHoop(pos, COURT_LENGTH, 0.05);
-}
-
-
-
+/**
+ * Sets up all event listeners for game controls
+ * Handles keyboard input, light controls, camera presets, and basketball movement
+ */
 function setupEventListeners() {
   // Main light intensity control
   window.lightControls.mainLightSlider.addEventListener('input', (e) => {
@@ -201,7 +190,12 @@ function setupEventListeners() {
   document.addEventListener('keyup', (e) => handleBasketballMovementKey(e, false));
 }
 
-// Main animation loop with fixed timestep physics
+/**
+ * Main animation loop with fixed timestep physics
+ * Uses fixed timestep for consistent physics regardless of framerate
+ * Includes performance monitoring and adaptive rendering quality
+ */
+// Animation constants
 let lastTime = performance.now();
 const FIXED_TIMESTEP = 1/60; // 60 FPS for physics
 const MAX_DELTA = 1/30; // Cap delta to prevent large jumps
@@ -226,7 +220,7 @@ function animate() {
     frameCount = 0;
     lastFPSTime = now;
     
-    // Log performance warnings
+    // Warn about performance issues that affect physics
     if (currentFPS < 45) {
       console.warn(`Low FPS detected: ${currentFPS}fps - Physics may be affected`);
     }

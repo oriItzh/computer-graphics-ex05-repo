@@ -1,3 +1,8 @@
+/**
+ * UI creation and management
+ * Creates and manages all game UI elements including score display, controls, and light controls
+ * Generates DOM elements dynamically and attaches them to the document body
+ */
 export function createUI() {
   const scoreContainer = document.createElement('div');
   scoreContainer.style.position = 'absolute';

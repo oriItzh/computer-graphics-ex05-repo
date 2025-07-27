@@ -1,11 +1,12 @@
+/**
+ * Express server for Basketball Game
+ * Serves static files and handles routing for the Three.js basketball simulation
+ */
 import express from 'express';
 import path from 'path';
 import {fileURLToPath} from 'url';
 
-
 const __filename = fileURLToPath(import.meta.url);
-
-// 👇️ "/home/john/Desktop/javascript"
 const __dirname = path.dirname(__filename);
 
 const app = express()

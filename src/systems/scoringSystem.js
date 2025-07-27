@@ -1,4 +1,7 @@
-// Scoring system - handles score tracking, statistics, and visual feedback
+/**
+ * Scoring system - handles score tracking, statistics, and visual feedback
+ * Manages scoring logic, combo detection, and rim collision tracking
+ */
 export class ScoringSystem {
   constructor() {
     this.score = 0;
@@ -22,6 +25,12 @@ export class ScoringSystem {
     this.updateScoreUI();
   }
 
+  /**
+   * Processes a successful shot
+   * @param {Object} hoopPos - Position of the target hoop
+   * @param {Function} isThreePointShot - Function to determine if shot is from 3-point range
+   * @returns {Object} Shot result with scoring details
+   */
   makeShot(hoopPos, isThreePointShot) {
     // Determine points based on shot distance
     let points = 2; // Default 2 points
@@ -41,9 +50,6 @@ export class ScoringSystem {
     // Check for swoosh (no rim contact)
     const isSwoosh = !this.rimTouched;
     
-    // Debug logging for swoosh detection
-    console.log('Shot made - rimTouched:', this.rimTouched, 'isSwoosh:', isSwoosh);
-    
     this.score += points + bonusPoints;
     this.shotsMade++;
     this.lastShotMade = true;
@@ -51,7 +57,6 @@ export class ScoringSystem {
     
     // Display appropriate messages
     if (isSwoosh) {
-      console.log('Showing swoosh message!');
       this.showSwooshMessage();
     }
     
@@ -87,7 +92,6 @@ export class ScoringSystem {
 
   setRimTouched() {
     if (!this.rimTouched) {
-      console.log('Rim collision detected! Setting rimTouched to true');
       this.rimTouched = true;
     }
   }

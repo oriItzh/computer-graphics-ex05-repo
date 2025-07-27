@@ -1,4 +1,7 @@
-// Game state management - coordinates all systems and handles game logic
+/**
+ * Game state management - coordinates all systems and handles game logic
+ * Manages system initialization, game state updates, and UI coordination
+ */
 import { isThreePointShot } from '../basketballCourt.js';
 
 export class GameManager {
@@ -7,7 +10,7 @@ export class GameManager {
     this.basketball = basketball;
     this.COURT_LENGTH = COURT_LENGTH;
     this.COURT_WIDTH = COURT_WIDTH;
-    this.BACKBOARD_THICKNESS = 0.05; // Should be imported from basketballHoops.js
+    this.BACKBOARD_THICKNESS = 0.05; // TODO: Import from basketballHoops.js
     
     this.prevBallPos = basketball.position.clone();
     this.lastTime = performance.now();
@@ -27,12 +30,6 @@ export class GameManager {
     if (shotZoneEl && !this.physicsSystem.isInFlight()) {
       const targetHoop = this.collisionSystem.getNearestHoop(this.basketball.position, this.COURT_LENGTH, this.BACKBOARD_THICKNESS);
       const isThreePoint = isThreePointShot(this.basketball.position, targetHoop);
-      
-      // Debug logging
-      console.log('Ball position:', this.basketball.position);
-      console.log('Target hoop:', targetHoop);
-      console.log('Distance to hoop:', this.basketball.position.distanceTo(new THREE.Vector3(targetHoop.x, this.basketball.position.y, targetHoop.z)));
-      console.log('Is three point:', isThreePoint);
       
       if (isThreePoint) {
         shotZoneEl.textContent = "3-Point Zone";

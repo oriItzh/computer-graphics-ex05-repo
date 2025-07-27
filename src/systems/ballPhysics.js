@@ -1,4 +1,8 @@
-// Ball physics system - handles velocity, gravity, collisions, and rotation
+/**
+ * Ball physics system - handles velocity, gravity, collisions, and rotation
+ * Uses realistic physics constants and energy conservation for ball movement
+ * Coordinate system: Y-up, with gravity acting downward
+ */
 export class BallPhysicsSystem {
   constructor() {
     this.ballVelocity = new THREE.Vector3(0, 0, 0);
@@ -7,7 +11,7 @@ export class BallPhysicsSystem {
     this.ballRotationSpeed = 0;
     this.firstGroundContact = false; // Track first ground contact after shot
     
-    // Physics constants
+    // Physics constants (all in SI units)
     this.GRAVITY = -9.8; // m/s^2
     this.BOUNCE_RESTITUTION = 0.65; // energy loss on bounce
     this.BALL_RADIUS = 0.12; // must match basketball.js
