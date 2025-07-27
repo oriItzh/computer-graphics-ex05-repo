@@ -49,7 +49,7 @@ export function getRimColliderPositions(COURT_LENGTH, numColliders = 16) {
       const angle = (i / numColliders) * Math.PI * 2;
       arr.push(new THREE.Vector3(
         center.x + Math.cos(angle) * RIM_RADIUS,
-        center.y,
+        center.y + 0.05, // Raise colliders slightly above rim for visibility
         center.z + Math.sin(angle) * RIM_RADIUS
       ));
     }

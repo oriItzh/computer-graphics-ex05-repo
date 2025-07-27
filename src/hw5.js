@@ -345,6 +345,7 @@ function resetBall() {
   shotStartPosition = null; // Reset shot start position
   
   // Reset swoosh and combo tracking for new shot
+  console.log('Resetting rimTouched to false for new shot');
   rimTouched = false;
   // Don't reset consecutiveHits here - only reset on miss
   
@@ -424,18 +425,18 @@ function hideTrajectory() {
 
 // --- Rim collider setup ---
 const NUM_RIM_COLLIDERS = 48; // Increased from 32 for better collision coverage
-const RIM_COLLIDER_RADIUS = 0.022; // Slightly increased for better collision detection
+const RIM_COLLIDER_RADIUS = 0.015; // Reduced from 0.022 for more precise swoosh detection
 const rimColliders = getRimColliderPositions(COURT_LENGTH, NUM_RIM_COLLIDERS);
 
 // --- DEBUG: Visualize rim colliders ---
-// function addRimCollidersDebug(scene, colliders, color) {
-//   const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3 });
-//   for (const pos of colliders) {
-//     const mesh = new THREE.Mesh(new THREE.SphereGeometry(RIM_COLLIDER_RADIUS, 12, 12), mat);
-//     mesh.position.copy(pos);
-//     scene.add(mesh);
-//   }
-// }
+function addRimCollidersDebug(scene, colliders, color) {
+  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8 });
+  for (const pos of colliders) {
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 12), mat); // Bigger spheres for visibility
+    mesh.position.copy(pos);
+    scene.add(mesh);
+  }
+}
 
 // --- DEBUG: Visualize scoring circular planes ---
 // function addScoringPlanesDebug(scene, COURT_LENGTH) {
@@ -461,8 +462,11 @@ const rimColliders = getRimColliderPositions(COURT_LENGTH, NUM_RIM_COLLIDERS);
 // }
 
 // Uncomment to visualize:
-// addRimCollidersDebug(scene, rimColliders.left, 0xff0000);
-// addRimCollidersDebug(scene, rimColliders.right, 0x0000ff);
+console.log('Adding rim collider debug spheres...');
+console.log('Left rim colliders:', rimColliders.left.length);
+console.log('Right rim colliders:', rimColliders.right.length);
+addRimCollidersDebug(scene, rimColliders.left, 0xff0000);
+addRimCollidersDebug(scene, rimColliders.right, 0x0000ff);
 // addScoringPlanesDebug(scene, COURT_LENGTH);
 
 function getActiveRimColliders(ballPos) {
@@ -472,13 +476,35 @@ function getActiveRimColliders(ballPos) {
 function handleBallRimCollision(ball, velocity) {
   const colliders = getActiveRimColliders(ball.position);
   
+  // Only check for rim collisions if ball is near rim height (within reasonable range)
+  const rimY = RIM_HEIGHT_ABOVE_GROUND;
+  const ballDistanceFromRimHeight = Math.abs(ball.position.y - rimY);
+  
+  // Only detect rim collisions if ball is within 0.2m of rim height (more restrictive)
+  if (ballDistanceFromRimHeight > 0.2) {
+    return; // Ball is too far from rim level to cause rim collision
+  }
+  
+  // Get horizontal distance to rim center for additional check
+  const hoopPos = getNearestHoop(ball.position);
+  const horizontalDistToRim = Math.sqrt(
+    Math.pow(ball.position.x - hoopPos.x, 2) + 
+    Math.pow(ball.position.z - hoopPos.z, 2)
+  );
+  
+  // Only check rim collisions if ball is close enough horizontally to the rim
+  if (horizontalDistToRim > (RIM_RADIUS + BALL_RADIUS * 2)) {
+    return; // Ball is too far from rim horizontally
+  }
+  
   for (const c of colliders) {
     const dist = ball.position.distanceTo(c);
-    const collisionDistance = RIM_COLLIDER_RADIUS + BALL_RADIUS;
+    const collisionDistance = RIM_COLLIDER_RADIUS + BALL_RADIUS * 0.8; // Reduced collision distance
     
     if (dist < collisionDistance) {
       // Mark that rim was touched for swoosh detection
       if (!rimTouched) {
+        console.log('Rim collision detected! Setting rimTouched to true');
         rimTouched = true;
       }
       
@@ -501,7 +527,7 @@ function handleBallRimCollision(ball, velocity) {
   }
   
   // Additional continuous collision detection for fast-moving ball
-  if (velocity.length() > 8) { // Only for high-speed shots
+  if (velocity.length() > 8 && ballDistanceFromRimHeight <= 0.2 && horizontalDistToRim <= (RIM_RADIUS + BALL_RADIUS * 2)) {
     const prevPos = ball.position.clone().sub(velocity.clone().multiplyScalar(0.016)); // Approximate previous position
     
     for (const c of colliders) {
@@ -517,9 +543,10 @@ function handleBallRimCollision(ball, velocity) {
       const closestPoint = lineStart.clone().add(lineDir.multiplyScalar(projectionLength));
       const distToLine = c.distanceTo(closestPoint);
       
-      if (distToLine < (RIM_COLLIDER_RADIUS + BALL_RADIUS)) {
+      if (distToLine < (RIM_COLLIDER_RADIUS + BALL_RADIUS * 0.8)) { // Reduced collision distance
         // Mark that rim was touched for swoosh detection
         if (!rimTouched) {
+          console.log('Continuous collision with rim detected! Setting rimTouched to true');
           rimTouched = true;
         }
         
@@ -528,7 +555,7 @@ function handleBallRimCollision(ball, velocity) {
         const dir = collisionPoint.clone().sub(c).normalize();
         
         // Move ball to collision point and reflect
-        ball.position.copy(c.clone().add(dir.multiplyScalar(RIM_COLLIDER_RADIUS + BALL_RADIUS + 0.01)));
+        ball.position.copy(c.clone().add(dir.multiplyScalar(RIM_COLLIDER_RADIUS + BALL_RADIUS * 0.8 + 0.01)));
         
         const vDotN = velocity.dot(dir);
         if (vDotN < 0) {
@@ -759,12 +786,16 @@ function animate() {
       // Check for swoosh (no rim contact)
       const isSwoosh = !rimTouched;
       
+      // Debug logging for swoosh detection
+      console.log('Shot made - rimTouched:', rimTouched, 'isSwoosh:', isSwoosh);
+      
       score += points + bonusPoints;
       shotsMade++;
       lastShotMade = true;
       
       // Display appropriate messages
       if (isSwoosh) {
+        console.log('Showing swoosh message!');
         showSwooshMessage();
       }
       
