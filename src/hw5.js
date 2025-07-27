@@ -3,6 +3,9 @@ import { createBasketballCourt } from './basketballCourt.js';
 import { createBasketballHoops } from './basketballHoops.js';
 import { createBasketball } from './basketball.js';
 import { createUI } from './ui.js';
+import { createStadiumStands } from './seats.js';
+import { createCourtLighting } from './courtLights.js';
+import { drawScoreboards } from './scoreboard.js';
 import { createMovementState, handleMovementKey, updateBasketballPosition, getCourtBoundaries } from './physics-hw06/basketballMovement.js';
 
 // Import all game systems
@@ -56,6 +59,9 @@ const COURT_WIDTH = 15.4;
 const basketball = createBasketball(scene);
 createBasketballCourt(scene);
 createBasketballHoops(scene, COURT_LENGTH);
+// createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH);
+// courtLightGroup = createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH);
+// drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
 createUI();
 
 // Initialize game systems
