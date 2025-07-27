@@ -43,9 +43,9 @@ const COURT_WIDTH = 15.4;
 const basketball = createBasketball(scene);
 createBasketballCourt(scene);
 createBasketballHoops(scene, COURT_LENGTH);
-createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH);
+// createStadiumStands(scene, COURT_LENGTH, COURT_WIDTH);
 // courtLightGroup = createCourtLighting(scene, COURT_LENGTH, COURT_WIDTH); // Keep this commented for now
-drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
+// drawScoreboards(scene, COURT_LENGTH, COURT_WIDTH);
 createUI();
 
 // Basketball movement state (Phase 1)
@@ -113,6 +113,10 @@ let shotsMade = 0;
 let lastShotMade = false;
 let shotInProgress = false;
 let shotStartPosition = null; // Track where the shot was taken from
+
+// --- Swoosh and Combo system ---
+let consecutiveHits = 0;
+let rimTouched = false; // Track if ball touched rim during current shot
 
 // --- Sound effects ---
 const crowdCheeringSounds = [];
@@ -193,6 +197,91 @@ function clearStatusMessage() {
   setStatusMessage('');
 }
 
+function showSwooshMessage() {
+  // Create a big swoosh message
+  const swooshEl = document.createElement('div');
+  swooshEl.textContent = 'SWOOSH!';
+  swooshEl.style.position = 'fixed';
+  swooshEl.style.top = '40%';
+  swooshEl.style.left = '50%';
+  swooshEl.style.transform = 'translate(-50%, -50%)';
+  swooshEl.style.fontSize = '80px';
+  swooshEl.style.fontWeight = 'bold';
+  swooshEl.style.color = 'white';
+  swooshEl.style.textShadow = '2px 2px 4px rgba(0,0,0,0.8)';
+  swooshEl.style.fontFamily = 'Arial, sans-serif';
+  swooshEl.style.zIndex = '1000';
+  swooshEl.style.pointerEvents = 'none';
+  swooshEl.style.animation = 'fadeInOut 2s ease-in-out';
+  
+  // Add CSS animation if not already added
+  if (!document.querySelector('#swoosh-animation-style')) {
+    const style = document.createElement('style');
+    style.id = 'swoosh-animation-style';
+    style.textContent = `
+      @keyframes fadeInOut {
+        0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+        30% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+        70% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  document.body.appendChild(swooshEl);
+  
+  // Remove the message after animation
+  setTimeout(() => {
+    if (swooshEl && swooshEl.parentNode) {
+      swooshEl.parentNode.removeChild(swooshEl);
+    }
+  }, 2000);
+}
+
+function showComboMessage(hits, extraPoints) {
+  // Create combo message
+  const comboEl = document.createElement('div');
+  comboEl.textContent = `COMBO x${hits} - +${extraPoints} BONUS!`;
+  comboEl.style.position = 'fixed';
+  comboEl.style.top = '55%';
+  comboEl.style.left = '50%';
+  comboEl.style.transform = 'translate(-50%, -50%)';
+  comboEl.style.fontSize = '48px';
+  comboEl.style.fontWeight = 'bold';
+  comboEl.style.color = '#FFD700'; // Golden color
+  comboEl.style.textShadow = '2px 2px 4px rgba(0,0,0,0.8)';
+  comboEl.style.fontFamily = 'Arial, sans-serif';
+  comboEl.style.zIndex = '1000';
+  comboEl.style.pointerEvents = 'none';
+  comboEl.style.animation = 'comboAnimation 2.5s ease-in-out';
+  
+  // Add CSS animation for combo if not already added
+  if (!document.querySelector('#combo-animation-style')) {
+    const style = document.createElement('style');
+    style.id = 'combo-animation-style';
+    style.textContent = `
+      @keyframes comboAnimation {
+        0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-10deg); }
+        25% { opacity: 1; transform: translate(-50%, -50%) scale(1.1) rotate(5deg); }
+        50% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+        75% { opacity: 1; transform: translate(-50%, -50%) scale(1.05) rotate(-2deg); }
+        100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8) rotate(0deg); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  document.body.appendChild(comboEl);
+  
+  // Remove the message after animation
+  setTimeout(() => {
+    if (comboEl && comboEl.parentNode) {
+      comboEl.parentNode.removeChild(comboEl);
+    }
+  }, 2500);
+}
+
 // --- Rim/hoop collision detection using circular plane intersection ---
 function isBallThroughHoop(ballPos, prevBallPos, hoopPos) {
   // Define the circular plane at rim height
@@ -254,6 +343,11 @@ function resetBall() {
   lastShotMade = false;
   shotInProgress = false;
   shotStartPosition = null; // Reset shot start position
+  
+  // Reset swoosh and combo tracking for new shot
+  rimTouched = false;
+  // Don't reset consecutiveHits here - only reset on miss
+  
   updateShotPowerDisplay();
   updateAngleDisplays();
   updateScoreUI();
@@ -383,6 +477,11 @@ function handleBallRimCollision(ball, velocity) {
     const collisionDistance = RIM_COLLIDER_RADIUS + BALL_RADIUS;
     
     if (dist < collisionDistance) {
+      // Mark that rim was touched for swoosh detection
+      if (!rimTouched) {
+        rimTouched = true;
+      }
+      
       // Move ball out of collider
       const dir = ball.position.clone().sub(c).normalize();
       ball.position.copy(c.clone().add(dir.multiplyScalar(collisionDistance + 0.01)));
@@ -419,6 +518,11 @@ function handleBallRimCollision(ball, velocity) {
       const distToLine = c.distanceTo(closestPoint);
       
       if (distToLine < (RIM_COLLIDER_RADIUS + BALL_RADIUS)) {
+        // Mark that rim was touched for swoosh detection
+        if (!rimTouched) {
+          rimTouched = true;
+        }
+        
         // Collision detected along trajectory
         const collisionPoint = closestPoint;
         const dir = collisionPoint.clone().sub(c).normalize();
@@ -643,10 +747,34 @@ function animate() {
         points = 3; // 3 points for shots beyond the 3-point line
       }
       
-      score += points;
+      // Increment consecutive hits counter
+      consecutiveHits++;
+      
+      // Calculate combo bonus points
+      let bonusPoints = 0;
+      if (consecutiveHits >= 3) {
+        bonusPoints = consecutiveHits - 2; // 3rd hit = 1 bonus, 4th hit = 2 bonus, etc.
+      }
+      
+      // Check for swoosh (no rim contact)
+      const isSwoosh = !rimTouched;
+      
+      score += points + bonusPoints;
       shotsMade++;
       lastShotMade = true;
-      setStatusMessage(`${points}-POINT SHOT MADE!`, '#00FF00');
+      
+      // Display appropriate messages
+      if (isSwoosh) {
+        showSwooshMessage();
+      }
+      
+      if (bonusPoints > 0) {
+        showComboMessage(consecutiveHits, bonusPoints);
+        setStatusMessage(`${points}+${bonusPoints}-POINT COMBO SHOT MADE!`, '#FFD700');
+      } else {
+        setStatusMessage(`${points}-POINT SHOT MADE!`, '#00FF00');
+      }
+      
       updateScoreUI();
       shotInProgress = true;
       
@@ -669,6 +797,7 @@ function animate() {
         // If shotInProgress is false, it means the shot missed
         if (!shotInProgress) {
           lastShotMade = false;
+          consecutiveHits = 0; // Reset combo streak on miss
           setStatusMessage('MISSED SHOT', '#FF3333');
         }
         shotInProgress = false;
