@@ -5,6 +5,7 @@ export class BallPhysicsSystem {
     this.inFlight = false;
     this.ballRotationAxis = new THREE.Vector3(1, 0, 0);
     this.ballRotationSpeed = 0;
+    this.firstGroundContact = false; // Track first ground contact after shot
     
     // Physics constants
     this.GRAVITY = -9.8; // m/s^2
@@ -41,7 +42,15 @@ export class BallPhysicsSystem {
     
     // Ground collision
     const groundY = this.BALL_RADIUS + this.BALL_GROUND_OFFSET;
+    let firstGroundContactThisFrame = false;
+    
     if (basketball.position.y <= groundY) {
+      // Check if this is the first ground contact
+      if (!this.firstGroundContact) {
+        this.firstGroundContact = true;
+        firstGroundContactThisFrame = true;
+      }
+      
       basketball.position.y = groundY;
       if (Math.abs(this.ballVelocity.y) > 0.5) { // Only bounce if moving fast enough
         this.ballVelocity.y = -this.ballVelocity.y * this.BOUNCE_RESTITUTION;
@@ -52,7 +61,7 @@ export class BallPhysicsSystem {
         // Ball comes to rest
         this.ballVelocity.set(0, 0, 0);
         this.inFlight = false;
-        return true; // Signal that ball has landed
+        return { ballLanded: true, firstGroundContact: firstGroundContactThisFrame }; // Signal that ball has landed
       }
     }
     
@@ -60,12 +69,13 @@ export class BallPhysicsSystem {
     basketball.position.x = Math.max(boundaries.minX, Math.min(boundaries.maxX, basketball.position.x));
     basketball.position.z = Math.max(boundaries.minZ, Math.min(boundaries.maxZ, basketball.position.z));
     
-    return false; // Ball still in flight
+    return { ballLanded: false, firstGroundContact: firstGroundContactThisFrame }; // Ball still in flight
   }
 
   shoot(ballPos, targetHoop, powerPercent, vertAngle) {
     this.ballVelocity = this.getShotInitialVelocity(ballPos, targetHoop, powerPercent, vertAngle);
     this.inFlight = true;
+    this.firstGroundContact = false; // Reset ground contact tracking for new shot
   }
 
   getShotInitialVelocity(ballPos, targetHoop, powerPercent, vertAngle) {

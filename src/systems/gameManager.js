@@ -67,21 +67,45 @@ export class GameManager {
 
     if (this.physicsSystem.isInFlight()) {
       // Handle ball physics
-      const ballLanded = this.physicsSystem.updatePhysics(this.basketball, delta, boundaries);
+      const physicsResult = this.physicsSystem.updatePhysics(this.basketball, delta, boundaries);
+      const ballLanded = physicsResult.ballLanded;
+      const firstGroundContact = physicsResult.firstGroundContact;
       
       // Check for scoring
       const hoopPos = this.collisionSystem.getNearestHoop(this.basketball.position, this.COURT_LENGTH, this.BACKBOARD_THICKNESS);
       if (!this.scoringSystem.shotInProgress && this.collisionSystem.isBallThroughHoop(this.basketball.position, this.prevBallPos, hoopPos)) {
         const shotResult = this.scoringSystem.makeShot(hoopPos, isThreePointShot);
-        this.soundSystem.playRandomCheerSound();
+        
+        // Play appropriate sound based on milestone and swoosh status
+        if (shotResult.isRhythmicMilestone) {
+          this.soundSystem.playRhythmicCheeringSound(); // Every 5 straight scores
+        } else if (shotResult.isSwoosh) {
+          this.soundSystem.playRandomSwooshSound(); // 50% chance for rak-reshet, 50% for regular cheer
+        } else {
+          this.soundSystem.playRandomCheerSound(); // Regular cheering for non-swoosh shots
+        }
       }
       
       // Handle rim collisions
       this.collisionSystem.handleBallRimCollision(this.basketball, this.physicsSystem.getVelocity(), this.scoringSystem);
       
+      // Play disappointment sound on first ground contact (if not scored)
+      if (firstGroundContact && !this.scoringSystem.lastShotMade) {
+        // Check if combo was active to determine which disappointment sound to play
+        const wasComboActive = this.scoringSystem.consecutiveHits >= 3;
+        this.soundSystem.playRandomDisappointmentSound(wasComboActive);
+      }
+      
       // Check if ball landed
       if (ballLanded) {
-        this.scoringSystem.missShot();
+        // Only process miss if the shot wasn't already made
+        if (!this.scoringSystem.lastShotMade) {
+          const missResult = this.scoringSystem.missShot();
+          // Note: disappointment sound already played on first ground contact
+        } else {
+          // Shot was made, just reset the shot progress
+          this.scoringSystem.shotInProgress = false;
+        }
       }
       
       this.prevBallPos.copy(this.basketball.position);

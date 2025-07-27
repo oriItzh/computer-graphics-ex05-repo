@@ -64,17 +64,25 @@ export class ScoringSystem {
     
     this.updateScoreUI();
     
-    return { isSwoosh, points, bonusPoints };
+    // Check if this is every 5th consecutive hit for rhythmic cheering
+    const isRhythmicMilestone = (this.consecutiveHits % 5 === 0) && this.consecutiveHits >= 5;
+    
+    return { isSwoosh, points, bonusPoints, isRhythmicMilestone };
   }
 
   missShot() {
-    if (!this.shotInProgress) {
-      this.lastShotMade = false;
+    // Check if combo was active before resetting
+    const wasComboActive = this.consecutiveHits >= 3;
+    
+    // Only process as a miss if the shot wasn't already made
+    if (!this.lastShotMade) {
       this.consecutiveHits = 0; // Reset combo streak on miss
       this.setStatusMessage('MISSED SHOT', '#FF3333');
+      setTimeout(() => this.clearStatusMessage(), 1200);
     }
     this.shotInProgress = false;
-    setTimeout(() => this.clearStatusMessage(), 1200);
+    
+    return { wasComboActive };
   }
 
   setRimTouched() {
