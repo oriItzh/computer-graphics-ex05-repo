@@ -18,7 +18,6 @@ export function createUI() {
     <div id="shot-zone" style="font-size:18px;margin-top:8px;margin-bottom:8px;padding:4px 8px;border-radius:3px;text-align:center;font-weight:bold;">2-Point Zone</div>
     <div id="shot-power-indicator" style="font-size:18px;margin-bottom:4px;">Shot Power: 50%</div>
     <div id="vertical-angle-indicator" style="font-size:18px;margin-bottom:4px;">Vertical Angle: 50°</div>
-    <div id="horizontal-angle-indicator" style="font-size:18px;margin-bottom:4px;">Horizontal Angle: 0°</div>
     <div id="status-message" style="font-size:20px;margin-top:10px;color:#FFD700;font-weight:bold;"></div>
   `;
   document.body.appendChild(scoreContainer);
@@ -45,7 +44,6 @@ export function createUI() {
     <p style="margin: 4px 0; font-size: 14px;">Arrow Keys - Move basketball</p>
     <p style="margin: 4px 0; font-size: 14px;">W/S - Adjust shot power</p>
     <p style="margin: 4px 0; font-size: 14px;">Q/E - Adjust vertical angle</p>
-    <p style="margin: 4px 0; font-size: 14px;">A/D - Adjust horizontal angle</p>
     <p style="margin: 4px 0; font-size: 14px;">Spacebar - Shoot</p>
     <p style="margin: 4px 0; font-size: 14px;">R - Reset ball position</p>
   `;

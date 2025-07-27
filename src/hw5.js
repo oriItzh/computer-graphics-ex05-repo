@@ -60,12 +60,9 @@ const SHOT_POWER_MAX = 100;
 
 // Shot angle controls
 let verticalAngle = 50; // degrees, 0-180 (launch angle)
-let horizontalAngle = 0; // degrees, rotation about Y-axis (left/right)
 const ANGLE_STEP = 5; // degrees per key press
 const VERTICAL_ANGLE_MIN = 0;
 const VERTICAL_ANGLE_MAX = 180;
-const HORIZONTAL_ANGLE_MIN = -180;
-const HORIZONTAL_ANGLE_MAX = 180;
 
 // --- Shooting & Physics State (Phase 3) ---
 let ballVelocity = new THREE.Vector3(0, 0, 0);
@@ -85,10 +82,14 @@ function getNearestHoop(pos) {
   return (pos.x < 0) ? leftHoop : rightHoop;
 }
 
-function getShotInitialVelocity(ballPos, targetHoop, powerPercent, vertAngle, horizAngle) {
-  // Calculate initial velocity vector using the specified angles
+function getShotInitialVelocity(ballPos, targetHoop, powerPercent, vertAngle) {
+  // Calculate initial velocity vector with automatic aiming at the hoop
   const vertAngleRad = vertAngle * Math.PI / 180;
-  const horizAngleRad = horizAngle * Math.PI / 180;
+  
+  // Calculate horizontal angle to aim at the target hoop
+  const dx = targetHoop.x - ballPos.x;
+  const dz = targetHoop.z - ballPos.z;
+  const horizAngleRad = Math.atan2(dz, dx); // Automatically aim at hoop
   
   // Power scales the initial speed
   const minSpeed = 6.5; // m/s (tunable)
@@ -97,7 +98,7 @@ function getShotInitialVelocity(ballPos, targetHoop, powerPercent, vertAngle, ho
   
   // Calculate velocity components based on angles
   // Vertical angle: 0° = horizontal, 90° = straight up
-  // Horizontal angle: 0° = towards positive X, 90° = towards positive Z
+  // Horizontal angle: automatically calculated to aim at hoop
   const vx = speed * Math.cos(vertAngleRad) * Math.cos(horizAngleRad);
   const vy = speed * Math.sin(vertAngleRad);
   const vz = speed * Math.cos(vertAngleRad) * Math.sin(horizAngleRad);
@@ -218,7 +219,6 @@ function resetBall() {
   inFlight = false;
   shotPower = 50;
   verticalAngle = 50;
-  horizontalAngle = 0;
   lastShotMade = false;
   shotInProgress = false;
   shotStartPosition = null; // Reset shot start position
@@ -242,24 +242,15 @@ function clampVerticalAngle(val) {
   return Math.max(VERTICAL_ANGLE_MIN, Math.min(VERTICAL_ANGLE_MAX, val));
 }
 
-function clampHorizontalAngle(val) {
-  // Allow wrapping for horizontal angle
-  while (val > HORIZONTAL_ANGLE_MAX) val -= 360;
-  while (val < HORIZONTAL_ANGLE_MIN) val += 360;
-  return val;
-}
-
 function updateAngleDisplays() {
   const vertEl = document.getElementById('vertical-angle-indicator');
-  const horizEl = document.getElementById('horizontal-angle-indicator');
   if (vertEl) vertEl.textContent = `Vertical Angle: ${verticalAngle}°`;
-  if (horizEl) horizEl.textContent = `Horizontal Angle: ${horizontalAngle}°`;
 }
 
 // --- Trajectory visualization ---
 let trajectoryLine = null;
 
-function showTrajectory(ballPos, targetHoop, powerPercent, vertAngle, horizAngle) {
+function showTrajectory(ballPos, targetHoop, powerPercent, vertAngle) {
   // Remove old trajectory if exists
   if (trajectoryLine) {
     scene.remove(trajectoryLine);
@@ -267,8 +258,8 @@ function showTrajectory(ballPos, targetHoop, powerPercent, vertAngle, horizAngle
     trajectoryLine.material.dispose();
     trajectoryLine = null;
   }
-  // Calculate initial velocity using current angles
-  const v0 = getShotInitialVelocity(ballPos, targetHoop, powerPercent, vertAngle, horizAngle);
+  // Calculate initial velocity using current angles with auto-aiming
+  const v0 = getShotInitialVelocity(ballPos, targetHoop, powerPercent, vertAngle);
   const points = [];
   const N = 60; // number of points
   let t = 0;
@@ -514,22 +505,12 @@ function setupEventListeners() {
         verticalAngle = clampVerticalAngle(verticalAngle - ANGLE_STEP);
         updateAngleDisplays();
         break;
-      case 'a':
-        // Rotate left (negative horizontal angle)
-        horizontalAngle = clampHorizontalAngle(horizontalAngle - ANGLE_STEP);
-        updateAngleDisplays();
-        break;
-      case 'd':
-        // Rotate right (positive horizontal angle)
-        horizontalAngle = clampHorizontalAngle(horizontalAngle + ANGLE_STEP);
-        updateAngleDisplays();
-        break;
       case ' ':
         // Spacebar: shoot if not in flight
         if (!inFlight) {
           shotStartPosition = basketball.position.clone(); // Record where the shot was taken from
           const targetHoop = getNearestHoop(basketball.position);
-          ballVelocity = getShotInitialVelocity(basketball.position, targetHoop, shotPower, verticalAngle, horizontalAngle);
+          ballVelocity = getShotInitialVelocity(basketball.position, targetHoop, shotPower, verticalAngle);
           inFlight = true;
           attempts++;
           lastShotMade = false;
@@ -646,7 +627,7 @@ function animate() {
   updateShotZoneDisplay(); // Update live zone indicator
   if (!inFlight) {
     const targetHoop = getNearestHoop(basketball.position);
-    showTrajectory(basketball.position, targetHoop, shotPower, verticalAngle, horizontalAngle);
+    showTrajectory(basketball.position, targetHoop, shotPower, verticalAngle);
   } else {
     hideTrajectory();
   }
